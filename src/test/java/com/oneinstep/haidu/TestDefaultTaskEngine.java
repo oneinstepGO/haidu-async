@@ -23,7 +23,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
-public class TestTaskEngine {
+public class TestDefaultTaskEngine {
     private TaskConfig taskConfig;
     private ExecutorService executorService;
 
@@ -33,7 +33,7 @@ public class TestTaskEngine {
         String valueStr = null;
         try {
             String demoConfigFilePath = "/config/demo.task.config.json";
-            valueStr = IOUtils.toString(Objects.requireNonNull(TestTaskEngine.class.getResourceAsStream(demoConfigFilePath)), StandardCharsets.UTF_8);
+            valueStr = IOUtils.toString(Objects.requireNonNull(TestDefaultTaskEngine.class.getResourceAsStream(demoConfigFilePath)), StandardCharsets.UTF_8);
         } catch (IOException e) {
             log.error("read demo task config from file error....", e);
         }
@@ -53,8 +53,8 @@ public class TestTaskEngine {
     public void test1() {
         RequestContext requestContext = new RequestContext();
         requestContext.setTaskConfig(this.taskConfig);
-        TaskEngine taskEngine = new TaskEngine(this.executorService);
-        taskEngine.taskArrangeAndExec(requestContext);
+        TaskEngine taskEngine = TaskEngine.getInstance(executorService);
+        taskEngine.startEngine(requestContext);
 
         Map<String, Result> taskResultMap = requestContext.getTaskResultMap();
         Result result1 = taskResultMap.get("1");
