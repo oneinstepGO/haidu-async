@@ -4,6 +4,9 @@ import lombok.Data;
 
 import java.util.Map;
 
+/**
+ * 任务详情
+ */
 @Data
 public class TaskDetail {
     // task 标识

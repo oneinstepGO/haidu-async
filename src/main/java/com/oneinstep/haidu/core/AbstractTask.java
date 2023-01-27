@@ -8,26 +8,13 @@ import org.slf4j.Logger;
 public abstract class AbstractTask<T> implements HaiDuTask<RequestContext,Void> {
 
     protected String taskId;
-
     protected abstract Result<T> invoke(RequestContext requestContext);
-
     protected abstract void beforeInvoke(RequestContext requestContext);
-
+    protected abstract void afterInvoke(RequestContext requestContext);
+    protected abstract Logger getLogger();
     protected boolean checkResult(RequestContext requestContext, Result<T> result) {
         return true;
     };
-
-    protected abstract void afterInvoke(RequestContext requestContext);
-
-    protected abstract Logger getLogger();
-
-    public String getTaskId() {
-        return taskId;
-    }
-
-    public void setTaskId(String taskId) {
-        this.taskId = taskId;
-    }
 
     @Override
     public Void exec(RequestContext requestContext) {
@@ -41,5 +28,13 @@ public abstract class AbstractTask<T> implements HaiDuTask<RequestContext,Void> 
             getLogger().warn("Result of taskId;{} check invalid.", getTaskId());
         }
         return null;
+    }
+
+    public String getTaskId() {
+        return taskId;
+    }
+
+    public void setTaskId(String taskId) {
+        this.taskId = taskId;
     }
 }
