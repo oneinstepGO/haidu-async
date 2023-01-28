@@ -54,7 +54,7 @@ public class TestDefaultTaskEngine {
         RequestContext requestContext = new RequestContext();
         requestContext.setTaskConfig(this.taskConfig);
         TaskEngine taskEngine = TaskEngine.getInstance(executorService);
-        taskEngine.taskArrangeAndExec(requestContext);
+        taskEngine.startEngine(requestContext);
 
         Map<String, Result> taskResultMap = requestContext.getTaskResultMap();
         Result result1 = taskResultMap.get("1");

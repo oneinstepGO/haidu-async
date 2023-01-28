@@ -16,16 +16,18 @@ import java.util.stream.Stream;
  */
 @Slf4j
 public class TaskEngine {
-
+    // 单例
     private static TaskEngine INSTANCE;
+    // 线程池
     private static ExecutorService taskThreadPool;
 
     /**
      * 运行时 task 类缓存，避免重复反射创建
      */
-    private final Map<String, AbstractTask> runTimeTaskMap = new ConcurrentHashMap<>();
+    private static final Map<String, AbstractTask> RUN_TIME_TASK_MAP = new ConcurrentHashMap<>();
 
     private TaskEngine() {
+        // 默认线程池
         this.taskThreadPool = new ThreadPoolExecutor(
                 100,
                 100,
@@ -36,9 +38,11 @@ public class TaskEngine {
     }
 
     private TaskEngine(ExecutorService taskThreadPool) {
+        // 用户自定义线程池
         this.taskThreadPool = taskThreadPool;
     }
 
+    // 实例获取方法
     public static TaskEngine getInstance(final ExecutorService taskThreadPool) {
         if (INSTANCE == null) {
             synchronized (TaskEngine.class) {
@@ -54,7 +58,11 @@ public class TaskEngine {
         return INSTANCE;
     }
 
-    public void taskArrangeAndExec(RequestContext context) {
+    /**
+     * 启动任务引擎
+     * @param context
+     */
+    public void startEngine(RequestContext context) {
         TaskConfig taskConfig = context.getTaskConfig();
         if (taskConfig == null) {
             log.warn("the task config is null.");
@@ -65,12 +73,10 @@ public class TaskEngine {
             log.warn("the task arrange is empty...");
             return;
         }
-
-        Map<String, String> taskIdAndClassNameMap = taskConfig.getTaskDetailsMap().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getFullClassName()));
-
+        Map<String, String> taskIdAndClassNameMap = taskConfig.getTaskDetailsMap().entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getFullClassName()));
         // 一行为一个编排组 保存编排组
         List<CompletableFuture<Void>> commonFutures = new ArrayList<>();
-
         for (int i = 0; i < arrange.size(); i++) {
             if (i == 0) {
                 CompletableFuture<Void> beginFuture = arrangeGroup(arrange.get(i), context, taskIdAndClassNameMap);
@@ -88,56 +94,40 @@ public class TaskEngine {
 
     private AbstractTask[] getTasks(String[] taskIdsArr, Map<String, String> taskClassNameMap) {
         return Stream.of(taskIdsArr).map(taskId -> {
-            AbstractTask task = runTimeTaskMap.get(taskId);
-            if (task != null) {
-                return task;
-            }
-            String taskClassName = null;
-            try {
-                taskClassName = taskClassNameMap.get(taskId);
-                if (StringUtils.isBlank(taskClassName)) {
-                    log.error("there is no task class name in the taskClassNameMap.");
-                    throw new RuntimeException("无效taskClassName");
-                }
-                task = (AbstractTask) Class.forName(taskClassName).getConstructor().newInstance();
-                task.setTaskId(taskId);
+            AbstractTask task = RUN_TIME_TASK_MAP.get(taskId);
+            if (task == null) {
+                String taskClassName = null;
+                try {
+                    taskClassName = taskClassNameMap.get(taskId);
+                    if (StringUtils.isBlank(taskClassName)) {
+                        log.error("there is no task class name in the taskClassNameMap.");
+                        throw new RuntimeException("无效taskClassName");
+                    }
+                    task = (AbstractTask) Class.forName(taskClassName).getConstructor().newInstance();
+                    task.setTaskId(taskId);
 
-                runTimeTaskMap.put(taskId, task);
-                return task;
-            } catch (Exception e) {
-                log.error("Instantiation Exception during taskId={}, taskName={}", taskId, taskClassName, e);
-                throw new RuntimeException(e);
+                    RUN_TIME_TASK_MAP.put(taskId, task);
+                    return task;
+                } catch (Exception e) {
+                    log.error("Instantiation Exception during taskId={}, taskName={}", taskId, taskClassName, e);
+                    throw new RuntimeException(e);
+                }
             }
+            return task;
         }).filter(Objects::nonNull).toArray(AbstractTask[]::new);
     }
 
-
-    /**
-     * Task1,Task2 // 开始任务
-     * Task1:Task3
-     * Task2:Task5
-     * Task1,Task2:Task4
-     * Task3,Task4,Task5:Task6
-     *
-     * @param arrange     编排规则
-     * @param taskContext 任务上下文
-     */
-    public CompletableFuture<Void> arrangeGroup(List<String> arrange, RequestContext taskContext, Map<String, String> taskNameMap) {
-
+    private CompletableFuture<Void> arrangeGroup(List<String> arrange, RequestContext taskContext, Map<String, String> taskNameMap) {
         // 映射 taskId -> future 存储Future
         Map<String, CompletableFuture<Void>> alreadySubmitFutureMap = new ConcurrentHashMap<>();
-
         // 一行为一个编排组 保存编排组
         CompletableFuture<Void> wholeFuture = null;
-
         for (int i = 0; i < arrange.size(); i++) {
             // 行编排  Future
             CompletableFuture<Void> lineFuture = null;
-
             String arrangeLine = arrange.get(i);
             String[] arrangeSegArr = arrangeLine.split(":");
             AbstractTask[] fatherTasks = getTasks(arrangeSegArr[0].split(","), taskNameMap);
-
             if (i == 0) {
                 // 第一行 开始编排 直接存入 map
                 List<CompletableFuture<Void>> startList = new ArrayList<>();
@@ -159,21 +149,17 @@ public class TaskEngine {
                             .toArray(CompletableFuture[]::new));
                 }
             }
-
             if (arrangeSegArr.length > 1) {
                 AbstractTask[] secondTasks = getTasks(new String[]{arrangeSegArr[1]}, taskNameMap);
                 AbstractTask lineEndTask = secondTasks[0];
                 lineFuture = lineFuture.thenAcceptAsync((r) -> lineEndTask.exec(taskContext), taskThreadPool);
                 alreadySubmitFutureMap.put(lineEndTask.getTaskId(), lineFuture);
             }
-
             // 最后一行 结束编排
             if (i != 0 && i == arrange.size() - 1) {
                 wholeFuture = lineFuture;
             }
-
         }
-
         alreadySubmitFutureMap.clear();
         return wholeFuture;
     }
