@@ -5,9 +5,9 @@ import com.oneinstep.haidu.context.RequestContext;
 import com.oneinstep.haidu.result.Result;
 import org.slf4j.Logger;
 
-import java.util.function.Function;
+import java.util.function.Consumer;
 
-public abstract class AbstractTask<T> implements Function<RequestContext, Void> {
+public abstract class AbstractTask<T> implements Consumer<RequestContext> {
 
     protected String taskId;
     protected abstract Result<T> invoke(RequestContext requestContext);
@@ -19,7 +19,7 @@ public abstract class AbstractTask<T> implements Function<RequestContext, Void> 
     };
 
     @Override
-    public Void apply(RequestContext requestContext) {
+    public void accept(RequestContext requestContext) {
         beforeInvoke(requestContext);
         Result<T> result = invoke(requestContext);
         getLogger().info("the Result of taskId:{} -> {}", getTaskId(), JSON.toJSONString(result));
@@ -29,7 +29,6 @@ public abstract class AbstractTask<T> implements Function<RequestContext, Void> 
         } else {
             getLogger().warn("Result of taskId;{} check invalid.", getTaskId());
         }
-        return null;
     }
 
     public String getTaskId() {
