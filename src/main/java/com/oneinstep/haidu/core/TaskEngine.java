@@ -132,7 +132,7 @@ public class TaskEngine {
                 // 第一行 开始编排 直接存入 map
                 List<CompletableFuture<Void>> startList = new ArrayList<>();
                 Arrays.stream(fatherTasks).forEach(fatherTask -> {
-                    CompletableFuture<Void> future = CompletableFuture.supplyAsync(() -> fatherTask.exec(taskContext), taskThreadPool);
+                    CompletableFuture<Void> future = CompletableFuture.supplyAsync(() -> fatherTask.apply(taskContext), taskThreadPool);
                     startList.add(future);
                     alreadySubmitFutureMap.put(fatherTask.getTaskId(), future);
                 });
@@ -152,7 +152,7 @@ public class TaskEngine {
             if (arrangeSegArr.length > 1) {
                 AbstractTask[] secondTasks = getTasks(new String[]{arrangeSegArr[1]}, taskNameMap);
                 AbstractTask lineEndTask = secondTasks[0];
-                lineFuture = lineFuture.thenAcceptAsync((r) -> lineEndTask.exec(taskContext), taskThreadPool);
+                lineFuture = lineFuture.thenAcceptAsync((r) -> lineEndTask.apply(taskContext), taskThreadPool);
                 alreadySubmitFutureMap.put(lineEndTask.getTaskId(), lineFuture);
             }
             // 最后一行 结束编排

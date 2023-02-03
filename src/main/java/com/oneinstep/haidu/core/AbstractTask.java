@@ -5,7 +5,9 @@ import com.oneinstep.haidu.context.RequestContext;
 import com.oneinstep.haidu.result.Result;
 import org.slf4j.Logger;
 
-public abstract class AbstractTask<T> implements HaiDuTask<RequestContext,Void> {
+import java.util.function.Function;
+
+public abstract class AbstractTask<T> implements Function<RequestContext, Void> {
 
     protected String taskId;
     protected abstract Result<T> invoke(RequestContext requestContext);
@@ -17,7 +19,7 @@ public abstract class AbstractTask<T> implements HaiDuTask<RequestContext,Void> 
     };
 
     @Override
-    public Void exec(RequestContext requestContext) {
+    public Void apply(RequestContext requestContext) {
         beforeInvoke(requestContext);
         Result<T> result = invoke(requestContext);
         getLogger().info("the Result of taskId:{} -> {}", getTaskId(), JSON.toJSONString(result));
