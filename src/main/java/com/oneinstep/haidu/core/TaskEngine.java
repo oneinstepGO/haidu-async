@@ -95,25 +95,24 @@ public class TaskEngine {
     private AbstractTask[] getTasks(String[] taskIdsArr, Map<String, String> taskClassNameMap) {
         return Stream.of(taskIdsArr).map(taskId -> {
             AbstractTask task = RUN_TIME_TASK_MAP.get(taskId);
-            if (task == null) {
-                String taskClassName = null;
-                try {
-                    taskClassName = taskClassNameMap.get(taskId);
-                    if (StringUtils.isBlank(taskClassName)) {
-                        log.error("there is no task class name in the taskClassNameMap.");
-                        throw new RuntimeException("无效taskClassName");
-                    }
-                    task = (AbstractTask) Class.forName(taskClassName).getConstructor().newInstance();
-                    task.setTaskId(taskId);
-
-                    RUN_TIME_TASK_MAP.put(taskId, task);
-                    return task;
-                } catch (Exception e) {
-                    log.error("Instantiation Exception during taskId={}, taskName={}", taskId, taskClassName, e);
-                    throw new RuntimeException(e);
-                }
+            String taskClassName = taskClassNameMap.get(taskId);
+            if (task != null && task.getClass().getSimpleName().equalsIgnoreCase(taskClassName))  {
+                return task;
             }
-            return task;
+            try {
+                if (StringUtils.isBlank(taskClassName)) {
+                    log.error("there is no task class name in the taskClassNameMap.");
+                    throw new RuntimeException("无效taskClassName");
+                }
+                task = (AbstractTask) Class.forName(taskClassName).getConstructor().newInstance();
+                task.setTaskId(taskId);
+
+                RUN_TIME_TASK_MAP.put(taskId, task);
+                return task;
+            } catch (Exception e) {
+                log.error("Instantiation Exception during taskId={}, taskName={}", taskId, taskClassName, e);
+                throw new RuntimeException(e);
+            }
         }).filter(Objects::nonNull).toArray(AbstractTask[]::new);
     }
 
