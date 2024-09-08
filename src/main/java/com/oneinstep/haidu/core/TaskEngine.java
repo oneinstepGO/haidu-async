@@ -1,7 +1,9 @@
 package com.oneinstep.haidu.core;
 
 import com.oneinstep.haidu.config.TaskConfig;
+import com.oneinstep.haidu.config.TaskDependencyChecker;
 import com.oneinstep.haidu.context.RequestContext;
+import com.oneinstep.haidu.exception.IllegalTaskConfigException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -60,18 +62,26 @@ public class TaskEngine {
 
     /**
      * 启动任务引擎
+     *
      * @param context
      */
     public void startEngine(RequestContext context) {
         TaskConfig taskConfig = context.getTaskConfig();
         if (taskConfig == null) {
             log.warn("the task config is null.");
-            return;
+            throw new IllegalTaskConfigException("任务配置为空");
         }
         List<List<String>> arrange = taskConfig.getArrangeRule();
         if (CollectionUtils.isEmpty(arrange)) {
             log.warn("the task arrange is empty...");
-            return;
+            throw new IllegalTaskConfigException("任务编排为空");
+        }
+
+        // 检查任务配置是否有循环依赖
+        boolean hasCycle = TaskDependencyChecker.hasCircularDependency(arrange);
+        if (hasCycle) {
+            log.error("the task arrange has circular dependency.");
+            throw new IllegalTaskConfigException("任务编排存在循环依赖");
         }
         Map<String, String> taskIdAndClassNameMap = taskConfig.getTaskDetailsMap().entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getFullClassName()));
@@ -96,7 +106,7 @@ public class TaskEngine {
         return Stream.of(taskIdsArr).map(taskId -> {
             AbstractTask task = RUN_TIME_TASK_MAP.get(taskId);
             String taskClassName = taskClassNameMap.get(taskId);
-            if (task != null && task.getClass().getSimpleName().equalsIgnoreCase(taskClassName))  {
+            if (task != null && task.getClass().getSimpleName().equalsIgnoreCase(taskClassName)) {
                 return task;
             }
             try {
