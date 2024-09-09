@@ -55,6 +55,17 @@ public class TaskGraph {
         return Collections.unmodifiableList(new ArrayList<>(taskMap.values()));
     }
 
+    public List<String> getAllTaskIds() {
+        return Collections.unmodifiableList(new ArrayList<>(taskMap.keySet()));
+    }
+
+    public String[] getDependencies(String taskId) {
+        TaskNode task = taskMap.get(taskId);
+        if (task == null) {
+            return new String[0];
+        }
+        return task.dependencies.stream().map(node -> node.taskId).toArray(String[]::new);
+    }
 
     /**
      * 任务节点类，用于表示一个任务及其依赖关系

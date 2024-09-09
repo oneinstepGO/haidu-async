@@ -2,14 +2,23 @@ package com.oneinstep.haidu.parser;
 
 import com.oneinstep.haidu.config.TaskDetail;
 import com.oneinstep.haidu.core.AbstractTask;
+import com.oneinstep.haidu.exception.IllegalTaskConfigException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * 任务表达式解析器
+ * 规则：任务表达式由并行任务和依赖任务组成，用冒号分隔，如：["task1,task2:task3"]
+ * 表示task1和task2并行执行，task3在task1和task2执行完后执行
+ * <p>
+ * task1,task2 执行完执行 task3 和 task4
+ * 可以这样一行定义 ["task1,task2:task3,task4"]
+ * 也可以这样两行定义 ["task1,task2:task3", "task1,task2:task4"]
  */
 @Slf4j
 public class ExpressionParser {
@@ -50,6 +59,11 @@ public class ExpressionParser {
                     }
                 }
             }
+        }
+
+        // 检测循环依赖
+        if (hasCycle(graph)) {
+            throw new IllegalTaskConfigException("检测到循环依赖！");
         }
 
         return graph;
@@ -97,5 +111,55 @@ public class ExpressionParser {
             log.error("Instantiation Exception during taskId={}, taskName={}", taskId, taskClassName, e);
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * 检测任务图中是否存在循环依赖
+     *
+     * @param graph 任务图
+     * @return 如果存在循环依赖，则返回 true；否则返回 false
+     */
+    private static boolean hasCycle(TaskGraph graph) {
+        Set<String> visited = new HashSet<>();
+        Set<String> recStack = new HashSet<>();
+
+        for (String taskId : graph.getAllTaskIds()) {
+            if (hasCycleUtil(taskId, visited, recStack, graph)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * DFS辅助方法，用于检测循环依赖
+     *
+     * @param taskId   当前任务ID
+     * @param visited  已访问的任务ID集合
+     * @param recStack 递归栈中的任务ID集合
+     * @param graph    任务图
+     * @return 如果存在循环依赖，则返回 true；否则返回 false
+     */
+    private static boolean hasCycleUtil(String taskId, Set<String> visited, Set<String> recStack, TaskGraph graph) {
+        if (recStack.contains(taskId)) {
+            return true;
+        }
+
+        if (visited.contains(taskId)) {
+            return false;
+        }
+
+        visited.add(taskId);
+        recStack.add(taskId);
+
+        for (String dependentTaskId : graph.getDependencies(taskId)) {
+            if (hasCycleUtil(dependentTaskId, visited, recStack, graph)) {
+                return true;
+            }
+        }
+
+        recStack.remove(taskId);
+        return false;
     }
 }
