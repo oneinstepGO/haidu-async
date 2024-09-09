@@ -39,13 +39,15 @@ public class ExpressionParser {
 
             if (parts.length > 1) {
                 // 处理依赖任务
-                String dependentTaskId = parts[1];
-                AbstractTask andStoreTask = getAndStoreTask(dependentTaskId, taskInstanceMap, taskDetailMap);
-                graph.addTask(dependentTaskId, andStoreTask);
+                String[] dependentTaskIds = parts[1].split(",");
+                for (String dependentTaskId : dependentTaskIds) {
+                    AbstractTask andStoreTask = getAndStoreTask(dependentTaskId, taskInstanceMap, taskDetailMap);
+                    graph.addTask(dependentTaskId, andStoreTask);
 
-                for (String taskId : parallelTasks) {
-                    // 添加任务依赖关系
-                    graph.addDependency(dependentTaskId, taskId);
+                    for (String taskId : parallelTasks) {
+                        // 添加任务依赖关系
+                        graph.addDependency(dependentTaskId, taskId);
+                    }
                 }
             }
         }
