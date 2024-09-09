@@ -48,7 +48,7 @@ public class TestDefaultTaskEngine4 {
     }
 
     @Test(expected = IllegalTaskConfigException.class)
-    public void test2() {
+    public void testAsync() {
         RequestContext requestContext = new RequestContext();
         long start = System.currentTimeMillis();
         requestContext.setTaskConfig(this.taskConfig);

@@ -8,6 +8,7 @@ import com.oneinstep.haidu.parser.TaskGraph;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -74,11 +75,34 @@ public class TaskEngine {
             throw new IllegalTaskConfigException("任务编排为空");
         }
 
-        // 第一个是前置任务,中间的是并行任务,最后一个是后置任务
-        for (List<String> tasks : arrange) {
-            TaskGraph graph = ExpressionParser.parseExpressions(tasks, taskInstanceMap, taskConfig.getTaskDetailsMap());
-            execute(graph, context);
+        // 第一组是前置任务,中间N个组是并行任务,最后一个组是后置任务
+        // 前置任务
+        List<String> preTasks = arrange.get(0);
+        arrangeToOneFuture(ExpressionParser.parseExpressions(preTasks, taskInstanceMap, taskConfig.getTaskDetailsMap()), context).join();
+
+        // 并行任务
+        if (arrange.size() > 2) {
+            List<CompletableFuture<Void>> parallelFutures = new ArrayList<>();
+            for (int i = 1; i < arrange.size() - 1; i++) {
+                List<String> parallelTasks = arrange.get(i);
+                CompletableFuture<Void> future = arrangeToOneFuture(ExpressionParser.parseExpressions(parallelTasks, taskInstanceMap, taskConfig.getTaskDetailsMap()), context);
+                parallelFutures.add(future);
+            }
+            // 等待所有并行任务完成
+            CompletableFuture.allOf(parallelFutures.toArray(new CompletableFuture[0])).join();
+        } else {
+            log.warn("没有并行任务组...");
         }
+
+        // 后置任务
+        if (arrange.size() >= 2) {
+            // 后置任务
+            List<String> postTasks = arrange.get(arrange.size() - 1);
+            arrangeToOneFuture(ExpressionParser.parseExpressions(postTasks, taskInstanceMap, taskConfig.getTaskDetailsMap()), context).join();
+        } else {
+            log.warn("没有后置任务组...");
+        }
+
     }
 
     /**
@@ -87,7 +111,7 @@ public class TaskEngine {
      * @param graph   任务图
      * @param context 请求上下文
      */
-    private void execute(TaskGraph graph, RequestContext context) {
+    private CompletableFuture<Void> arrangeToOneFuture(TaskGraph graph, RequestContext context) {
         // 存储任务节点及其对应的CompletableFuture
         Map<TaskGraph.TaskNode, CompletableFuture<Void>> futures = new HashMap<>();
 
@@ -97,10 +121,9 @@ public class TaskEngine {
         }
 
         // 等待所有任务完成
-        CompletableFuture<Void> allTasks = CompletableFuture.allOf(
+        return CompletableFuture.allOf(
                 futures.values().toArray(new CompletableFuture[0])
         );
-        allTasks.join();
     }
 
     /**

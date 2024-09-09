@@ -123,6 +123,7 @@ public class ExpressionParser {
         Set<String> visited = new HashSet<>();
         Set<String> recStack = new HashSet<>();
 
+        // 遍历所有任务ID，检测循环依赖
         for (String taskId : graph.getAllTaskIds()) {
             if (hasCycleUtil(taskId, visited, recStack, graph)) {
                 return true;
@@ -142,24 +143,32 @@ public class ExpressionParser {
      * @return 如果存在循环依赖，则返回 true；否则返回 false
      */
     private static boolean hasCycleUtil(String taskId, Set<String> visited, Set<String> recStack, TaskGraph graph) {
+
+        // 如果任务ID已经在递归栈中，则存在循环依赖
         if (recStack.contains(taskId)) {
             return true;
         }
 
+        // 如果任务ID已经访问过，则跳过
         if (visited.contains(taskId)) {
             return false;
         }
 
+        // 将任务ID添加到已访问和递归栈中
         visited.add(taskId);
         recStack.add(taskId);
 
+        // 递归检测依赖任务
         for (String dependentTaskId : graph.getDependencies(taskId)) {
+            // 如果依赖任务存在循环依赖，则返回 true
             if (hasCycleUtil(dependentTaskId, visited, recStack, graph)) {
                 return true;
             }
         }
 
+        // 从递归栈中移除任务ID
         recStack.remove(taskId);
+        // 返回 false，表示不存在循环依赖
         return false;
     }
 }

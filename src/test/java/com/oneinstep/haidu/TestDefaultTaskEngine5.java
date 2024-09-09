@@ -7,10 +7,6 @@ import com.oneinstep.haidu.config.TaskConfig;
 import com.oneinstep.haidu.context.RequestContext;
 import com.oneinstep.haidu.core.TaskEngine;
 import com.oneinstep.haidu.result.Result;
-import com.oneinstep.haidu.task.Task1;
-import com.oneinstep.haidu.task2.Task9999;
-import com.oneinstep.haidu.task2.TaskA;
-import com.oneinstep.haidu.task2.TaskB;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
@@ -27,7 +23,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
-public class TestDefaultTaskEngine3 {
+public class TestDefaultTaskEngine5 {
     private TaskConfig taskConfig;
     private ExecutorService executorService;
 
@@ -36,8 +32,8 @@ public class TestDefaultTaskEngine3 {
 
         String valueStr = null;
         try {
-            String demoConfigFilePath = "/config/demo.task.config3.json";
-            valueStr = IOUtils.toString(Objects.requireNonNull(TestDefaultTaskEngine3.class.getResourceAsStream(demoConfigFilePath)), StandardCharsets.UTF_8);
+            String demoConfigFilePath = "/config/demo.task.config5.json";
+            valueStr = IOUtils.toString(Objects.requireNonNull(TestDefaultTaskEngine5.class.getResourceAsStream(demoConfigFilePath)), StandardCharsets.UTF_8);
         } catch (IOException e) {
             log.error("read demo task config from file error....", e);
         }
@@ -83,51 +79,19 @@ public class TestDefaultTaskEngine3 {
         Assert.assertEquals("task1004 数据不对", "[DATA:2-1 -> DATA:2-1001,DATA:2-1 -> DATA:2-1002,DATA:2-1 -> DATA:2-1003] -> DATA:2-1004", result1004.getData());
         Assert.assertEquals("task1005 数据不对", "[DATA:2-1 -> DATA:2-1001,DATA:2-1 -> DATA:2-1002,DATA:2-1 -> DATA:2-1003] -> DATA:2-1005", result1005.getData());
         Assert.assertEquals("task9999 数据不对", "[[DATA:2-1 -> DATA:2-1001,DATA:2-1 -> DATA:2-1002,DATA:2-1 -> DATA:2-1003] -> DATA:2-1004,[DATA:2-1 -> DATA:2-1001,DATA:2-1 -> DATA:2-1002,DATA:2-1 -> DATA:2-1003] -> DATA:2-1005] -> DATA:2-9999", result9999.getData());
+
+
+        Result result2001 = taskResultMap.get("2-2001");
+        Result result2002 = taskResultMap.get("2-2002");
+        Result result2003 = taskResultMap.get("2-2003");
+        Result result2004 = taskResultMap.get("2-2004");
+        Result result2005 = taskResultMap.get("2-2005");
+
+        Assert.assertEquals("task2001 数据不对", "DATA:2-1 -> DATA:2-2001", result2001.getData());
+        Assert.assertEquals("task2002 数据不对", "DATA:2-1 -> DATA:2-2002", result2002.getData());
+        Assert.assertEquals("task2003 数据不对", "DATA:2-1 -> DATA:2-2003", result2003.getData());
+        Assert.assertEquals("task2004 数据不对", "[DATA:2-1 -> DATA:2-2001,DATA:2-1 -> DATA:2-2002,DATA:2-1 -> DATA:2-2003] -> DATA:2-2004", result2004.getData());
+        Assert.assertEquals("task2005 数据不对", "[DATA:2-1 -> DATA:2-2001,DATA:2-1 -> DATA:2-2002,DATA:2-1 -> DATA:2-2003] -> DATA:2-2005", result2005.getData());
     }
 
-    @Test
-    public void execOneByOne() {
-        RequestContext requestContext = new RequestContext();
-        long start = System.currentTimeMillis();
-
-        Task1 task1 = new Task1();
-        task1.setTaskId("2-1");
-        task1.accept(requestContext);
-        task1.setParams(Map.of("param1", "value1"));
-        task1.accept(requestContext);
-
-        TaskA task1001 = new TaskA();
-        task1001.setTaskId("2-1001");
-        task1001.setParams(Map.of("useId", "1001"));
-        task1001.accept(requestContext);
-
-        TaskA task1002 = new TaskA();
-        task1002.setTaskId("2-1002");
-        task1002.setParams(Map.of("useId", "1002"));
-        task1002.accept(requestContext);
-
-        TaskA task1003 = new TaskA();
-        task1003.setTaskId("2-1003");
-        task1003.setParams(Map.of("useId", "1003"));
-        task1003.accept(requestContext);
-
-        TaskB task1004 = new TaskB();
-        task1004.setTaskId("2-1004");
-        task1004.setParams(Map.of("pool", "today"));
-        task1004.accept(requestContext);
-
-        TaskB task1005 = new TaskB();
-        task1005.setTaskId("2-1005");
-        task1005.setParams(Map.of("type", "all"));
-        task1005.accept(requestContext);
-
-        Task9999 task9999 = new Task9999();
-        task9999.setTaskId("2-9999");
-        task9999.accept(requestContext);
-
-        long end = System.currentTimeMillis();
-        log.info("cost time:{}", end - start);
-
-        assertResult(requestContext);
-    }
 }
