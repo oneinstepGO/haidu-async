@@ -1,6 +1,8 @@
 {
   "arrangeRule": [
-    ["1,2"],
+    [
+      "1,2:3"
+    ],
     [
       "1001,1002",
       "1001:1003",
@@ -8,7 +10,9 @@
       "1001,1002:1004",
       "1003,1004,1005:1006"
     ],
-    ["9999"]
+    [
+      "9998,9999"
+    ]
   ],
   "taskDetailsMap": {
     "1": {
@@ -19,6 +23,11 @@
     "2": {
       "taskId": "2",
       "fullClassName": "com.oneinstep.haidu.task.Task2",
+      "params": {}
+    },
+    "3": {
+      "taskId": "3",
+      "fullClassName": "com.oneinstep.haidu.task.Task3",
       "params": {}
     },
     "1001": {
@@ -49,6 +58,11 @@
     "1006": {
       "taskId": "1006",
       "fullClassName": "com.oneinstep.haidu.task.Task1006",
+      "params": {}
+    },
+    "9998": {
+      "taskId": "9998",
+      "fullClassName": "com.oneinstep.haidu.task.Task9998",
       "params": {}
     },
     "9999": {

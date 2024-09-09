@@ -16,7 +16,7 @@ public class Task1002 extends AbstractTask<String> {
         Result result2 = requestContext.getTaskResultMap().get("2");
         ThreadLocalRandom random = ThreadLocalRandom.current();
         try {
-            Thread.sleep( random.nextInt(80, 100));
+            Thread.sleep(100 + random.nextInt(20));
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }

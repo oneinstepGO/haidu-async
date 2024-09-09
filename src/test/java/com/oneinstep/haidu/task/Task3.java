@@ -9,7 +9,7 @@ import org.slf4j.Logger;
 import java.util.concurrent.ThreadLocalRandom;
 
 @Slf4j
-public class Task1001 extends AbstractTask<String> {
+public class Task3 extends AbstractTask<String> {
     @Override
     protected Result<String> invoke(RequestContext requestContext) {
         Result result1 = requestContext.getTaskResultMap().get("1");
@@ -25,8 +25,7 @@ public class Task1001 extends AbstractTask<String> {
 
     @Override
     protected void beforeInvoke(RequestContext requestContext) {
-        log.info("before invoke: Task1->{}", requestContext.getTaskResultMap().get("1"));
-        log.info("before invoke: Task2->{}", requestContext.getTaskResultMap().get("2"));
+
     }
 
     @Override

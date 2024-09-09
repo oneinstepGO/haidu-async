@@ -1,17 +1,19 @@
 package com.oneinstep.haidu.core;
 
+import com.oneinstep.haidu.config.ExpressionParser;
 import com.oneinstep.haidu.config.TaskConfig;
-import com.oneinstep.haidu.config.TaskDependencyChecker;
+import com.oneinstep.haidu.config.TaskGraph;
+import com.oneinstep.haidu.config.TaskNode;
 import com.oneinstep.haidu.context.RequestContext;
 import com.oneinstep.haidu.exception.IllegalTaskConfigException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * 任务引擎
@@ -26,7 +28,7 @@ public class TaskEngine {
     /**
      * 运行时 task 类缓存，避免重复反射创建
      */
-    private static final Map<String, AbstractTask> RUN_TIME_TASK_MAP = new ConcurrentHashMap<>();
+    private final Map<String, AbstractTask> taskInstanceMap = new ConcurrentHashMap<>();
 
     private TaskEngine() {
         // 默认线程池
@@ -77,100 +79,52 @@ public class TaskEngine {
             throw new IllegalTaskConfigException("任务编排为空");
         }
 
-        // 检查任务配置是否有循环依赖
-        boolean hasCycle = TaskDependencyChecker.hasCircularDependency(arrange);
-        if (hasCycle) {
-            log.error("the task arrange has circular dependency.");
-            throw new IllegalTaskConfigException("任务编排存在循环依赖");
-        }
-        Map<String, String> taskIdAndClassNameMap = taskConfig.getTaskDetailsMap().entrySet().stream()
+        Map<String, String> taskClassNameMap = taskConfig.getTaskDetailsMap().entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getFullClassName()));
-        // 一行为一个编排组 保存编排组
-        List<CompletableFuture<Void>> commonFutures = new ArrayList<>();
+
+        context.setTaskClassNameMap(taskClassNameMap);
+
+        // 第一个是前置任务
+        // 中间的是并行任务
+        // 最后一个是后置任务
+
         for (int i = 0; i < arrange.size(); i++) {
-            if (i == 0) {
-                CompletableFuture<Void> beginFuture = arrangeGroup(arrange.get(i), context, taskIdAndClassNameMap);
-                beginFuture.join();
-            } else if (i == arrange.size() - 1) {
-                CompletableFuture<Void> middleFuture = CompletableFuture.allOf(commonFutures.toArray(new CompletableFuture[0]));
-                middleFuture.join();
-                CompletableFuture<Void> lastFuture = arrangeGroup(arrange.get(i), context, taskIdAndClassNameMap);
-                lastFuture.join();
-            } else {
-                commonFutures.add(arrangeGroup(arrange.get(i), context, taskIdAndClassNameMap));
-            }
+            List<String> tasks = arrange.get(i);
+            TaskGraph graph = ExpressionParser.parseExpressions(tasks, taskInstanceMap, taskClassNameMap);
+            execute(graph, context);
         }
+
     }
 
-    private AbstractTask[] getTasks(String[] taskIdsArr, Map<String, String> taskClassNameMap) {
-        return Stream.of(taskIdsArr).map(taskId -> {
-            AbstractTask task = RUN_TIME_TASK_MAP.get(taskId);
-            String taskClassName = taskClassNameMap.get(taskId);
-            if (task != null && task.getClass().getSimpleName().equalsIgnoreCase(taskClassName)) {
-                return task;
-            }
-            try {
-                if (StringUtils.isBlank(taskClassName)) {
-                    log.error("there is no task class name in the taskClassNameMap.");
-                    throw new RuntimeException("无效taskClassName");
-                }
-                task = (AbstractTask) Class.forName(taskClassName).getConstructor().newInstance();
-                task.setTaskId(taskId);
+    public void execute(TaskGraph graph, RequestContext context) {
+        Map<TaskNode, CompletableFuture<Void>> futures = new HashMap<>();
 
-                RUN_TIME_TASK_MAP.put(taskId, task);
-                return task;
-            } catch (Exception e) {
-                log.error("Instantiation Exception during taskId={}, taskName={}", taskId, taskClassName, e);
-                throw new RuntimeException(e);
-            }
-        }).filter(Objects::nonNull).toArray(AbstractTask[]::new);
+        for (TaskNode taskNode : graph.getAllTasks()) {
+            submitTask(taskNode, futures, context);
+        }
+
+        // 等待所有任务完成
+        CompletableFuture<Void> allTasks = CompletableFuture.allOf(
+                futures.values().toArray(new CompletableFuture[0])
+        );
+        allTasks.join();
     }
 
-    private CompletableFuture<Void> arrangeGroup(List<String> arrange, RequestContext taskContext, Map<String, String> taskNameMap) {
-        // 映射 taskId -> future 存储Future
-        Map<String, CompletableFuture<Void>> alreadySubmitFutureMap = new ConcurrentHashMap<>();
-        // 一行为一个编排组 保存编排组
-        CompletableFuture<Void> wholeFuture = null;
-        for (int i = 0; i < arrange.size(); i++) {
-            // 行编排  Future
-            CompletableFuture<Void> lineFuture = null;
-            String arrangeLine = arrange.get(i);
-            String[] arrangeSegArr = arrangeLine.split(":");
-            AbstractTask[] fatherTasks = getTasks(arrangeSegArr[0].split(","), taskNameMap);
-            if (i == 0) {
-                // 第一行 开始编排 直接存入 map
-                List<CompletableFuture<Void>> startList = new ArrayList<>();
-                Arrays.stream(fatherTasks).forEach(fatherTask -> {
-                    CompletableFuture<Void> future = CompletableFuture.runAsync(() -> fatherTask.accept(taskContext), taskThreadPool);
-                    startList.add(future);
-                    alreadySubmitFutureMap.put(fatherTask.getTaskId(), future);
-                });
-                if (arrange.size() == 1) {
-                    wholeFuture = CompletableFuture.allOf(startList.toArray(new CompletableFuture[0]));
-                    break;
-                }
-            } else {
-                if (fatherTasks.length == 1) {
-                    lineFuture = Optional.of(alreadySubmitFutureMap.get(fatherTasks[0].getTaskId())).orElseThrow(() -> new RuntimeException("future not in start futures."));
-                } else {
-                    lineFuture = CompletableFuture.allOf(Arrays.stream(fatherTasks)
-                            .map(fatherTask -> Optional.of(alreadySubmitFutureMap.get(fatherTask.getTaskId())).orElseThrow(() -> new RuntimeException("future not in start futures.")))
-                            .toArray(CompletableFuture[]::new));
-                }
-            }
-            if (arrangeSegArr.length > 1) {
-                AbstractTask[] secondTasks = getTasks(new String[]{arrangeSegArr[1]}, taskNameMap);
-                AbstractTask lineEndTask = secondTasks[0];
-                lineFuture = lineFuture.thenAcceptAsync((r) -> lineEndTask.accept(taskContext), taskThreadPool);
-                alreadySubmitFutureMap.put(lineEndTask.getTaskId(), lineFuture);
-            }
-            // 最后一行 结束编排
-            if (i != 0 && i == arrange.size() - 1) {
-                wholeFuture = lineFuture;
-            }
+    private CompletableFuture<Void> submitTask(TaskNode node, Map<TaskNode, CompletableFuture<Void>> futures, RequestContext context) {
+        if (futures.containsKey(node)) {
+            return futures.get(node);
         }
-        alreadySubmitFutureMap.clear();
-        return wholeFuture;
+
+        List<CompletableFuture<Void>> dependencyFutures = node.getDependencies().stream()
+                .map(dep -> submitTask(dep, futures, context))
+                .collect(Collectors.toList());
+
+        CompletableFuture<Void> taskFuture = CompletableFuture.allOf(
+                dependencyFutures.toArray(new CompletableFuture[0])
+        ).thenRunAsync(() -> node.getTask().accept(context), taskThreadPool);
+
+        futures.put(node, taskFuture);
+        return taskFuture;
     }
 
 }

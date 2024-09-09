@@ -9,24 +9,22 @@ import org.slf4j.Logger;
 import java.util.concurrent.ThreadLocalRandom;
 
 @Slf4j
-public class Task1001 extends AbstractTask<String> {
+public class Task9998 extends AbstractTask<String> {
     @Override
     protected Result<String> invoke(RequestContext requestContext) {
-        Result result1 = requestContext.getTaskResultMap().get("1");
-        Result result2 = requestContext.getTaskResultMap().get("2");
+        Result result1006 = requestContext.getTaskResultMap().get("1006");
         ThreadLocalRandom random = ThreadLocalRandom.current();
         try {
-            Thread.sleep(100 + random.nextInt(20));
+            Thread.sleep(100 + random.nextInt(50));
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        return Result.success("[" + result1.getData() + "," + result2.getData() + "]" + " -> DATA:" + this.getTaskId());
+        return Result.success("[" + result1006.getData() + "]" + " -> DATA:" + this.getTaskId());
     }
 
     @Override
     protected void beforeInvoke(RequestContext requestContext) {
-        log.info("before invoke: Task1->{}", requestContext.getTaskResultMap().get("1"));
-        log.info("before invoke: Task2->{}", requestContext.getTaskResultMap().get("2"));
+        log.info("before invoke: Task1006->{}", requestContext.getTaskResultMap().get("1006"));
     }
 
     @Override
