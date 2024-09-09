@@ -1,11 +1,10 @@
 package com.oneinstep.haidu.core;
 
-import com.oneinstep.haidu.config.ExpressionParser;
 import com.oneinstep.haidu.config.TaskConfig;
-import com.oneinstep.haidu.config.TaskGraph;
-import com.oneinstep.haidu.config.TaskNode;
 import com.oneinstep.haidu.context.RequestContext;
 import com.oneinstep.haidu.exception.IllegalTaskConfigException;
+import com.oneinstep.haidu.parser.ExpressionParser;
+import com.oneinstep.haidu.parser.TaskGraph;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 
@@ -16,23 +15,23 @@ import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 /**
- * 任务引擎
+ * 任务引擎类，用于管理和执行任务
  */
 @Slf4j
 public class TaskEngine {
-    // 单例
-    private static TaskEngine INSTANCE;
-    // 线程池
-    private static ExecutorService taskThreadPool;
+    // 单例实例，使用 volatile 确保可见性和防止指令重排序
+    private static volatile TaskEngine INSTANCE;
+    // 线程池，用于并发执行任务
+    private final ExecutorService taskThreadPool;
 
     /**
      * 运行时 task 类缓存，避免重复反射创建
      */
     private final Map<String, AbstractTask> taskInstanceMap = new ConcurrentHashMap<>();
 
-    private TaskEngine() {
-        // 默认线程池
-        this.taskThreadPool = new ThreadPoolExecutor(
+    // 私有构造函数，允许传入自定义线程池
+    private TaskEngine(ExecutorService taskThreadPool) {
+        this.taskThreadPool = taskThreadPool != null ? taskThreadPool : new ThreadPoolExecutor(
                 100,
                 100,
                 60,
@@ -41,21 +40,17 @@ public class TaskEngine {
                 new ThreadPoolExecutor.AbortPolicy());
     }
 
-    private TaskEngine(ExecutorService taskThreadPool) {
-        // 用户自定义线程池
-        this.taskThreadPool = taskThreadPool;
-    }
-
-    // 实例获取方法
+    /**
+     * 获取 TaskEngine 实例
+     *
+     * @param taskThreadPool 自定义线程池
+     * @return TaskEngine 实例
+     */
     public static TaskEngine getInstance(final ExecutorService taskThreadPool) {
         if (INSTANCE == null) {
             synchronized (TaskEngine.class) {
                 if (INSTANCE == null) {
-                    if (taskThreadPool == null) {
-                        INSTANCE = new TaskEngine();
-                    } else {
-                        INSTANCE = new TaskEngine(taskThreadPool);
-                    }
+                    INSTANCE = new TaskEngine(taskThreadPool);
                 }
             }
         }
@@ -65,7 +60,7 @@ public class TaskEngine {
     /**
      * 启动任务引擎
      *
-     * @param context
+     * @param context 请求上下文，包含任务配置
      */
     public void startEngine(RequestContext context) {
         TaskConfig taskConfig = context.getTaskConfig();
@@ -79,27 +74,25 @@ public class TaskEngine {
             throw new IllegalTaskConfigException("任务编排为空");
         }
 
-        Map<String, String> taskClassNameMap = taskConfig.getTaskDetailsMap().entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getFullClassName()));
-
-        context.setTaskClassNameMap(taskClassNameMap);
-
-        // 第一个是前置任务
-        // 中间的是并行任务
-        // 最后一个是后置任务
-
-        for (int i = 0; i < arrange.size(); i++) {
-            List<String> tasks = arrange.get(i);
-            TaskGraph graph = ExpressionParser.parseExpressions(tasks, taskInstanceMap, taskClassNameMap);
+        // 第一个是前置任务,中间的是并行任务,最后一个是后置任务
+        for (List<String> tasks : arrange) {
+            TaskGraph graph = ExpressionParser.parseExpressions(tasks, taskInstanceMap, taskConfig.getTaskDetailsMap());
             execute(graph, context);
         }
-
     }
 
-    public void execute(TaskGraph graph, RequestContext context) {
-        Map<TaskNode, CompletableFuture<Void>> futures = new HashMap<>();
+    /**
+     * 执行任务图中的任务
+     *
+     * @param graph   任务图
+     * @param context 请求上下文
+     */
+    private void execute(TaskGraph graph, RequestContext context) {
+        // 存储任务节点及其对应的CompletableFuture
+        Map<TaskGraph.TaskNode, CompletableFuture<Void>> futures = new HashMap<>();
 
-        for (TaskNode taskNode : graph.getAllTasks()) {
+        // 提交所有任务节点
+        for (TaskGraph.TaskNode taskNode : graph.getAllTasks()) {
             submitTask(taskNode, futures, context);
         }
 
@@ -110,21 +103,32 @@ public class TaskEngine {
         allTasks.join();
     }
 
-    private CompletableFuture<Void> submitTask(TaskNode node, Map<TaskNode, CompletableFuture<Void>> futures, RequestContext context) {
+    /**
+     * 提交任务节点，并处理其依赖关系
+     *
+     * @param node    任务节点
+     * @param futures 存储任务节点及其对应的CompletableFuture
+     * @param context 请求上下文
+     * @return 任务节点的CompletableFuture
+     */
+    private CompletableFuture<Void> submitTask(TaskGraph.TaskNode node, Map<TaskGraph.TaskNode, CompletableFuture<Void>> futures, RequestContext context) {
+        // 如果任务节点已经提交过，则直接返回其CompletableFuture
         if (futures.containsKey(node)) {
             return futures.get(node);
         }
 
+        // 提交依赖任务
         List<CompletableFuture<Void>> dependencyFutures = node.getDependencies().stream()
                 .map(dep -> submitTask(dep, futures, context))
                 .collect(Collectors.toList());
 
+        // 提交当前任务，并在所有依赖任务完成后执行
         CompletableFuture<Void> taskFuture = CompletableFuture.allOf(
                 dependencyFutures.toArray(new CompletableFuture[0])
         ).thenRunAsync(() -> node.getTask().accept(context), taskThreadPool);
 
+        // 将任务节点及其CompletableFuture存储到futures中
         futures.put(node, taskFuture);
         return taskFuture;
     }
-
 }

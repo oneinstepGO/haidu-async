@@ -13,6 +13,10 @@ public class TaskDetail {
     private String taskId;
     // 全限定类名
     private String fullClassName;
+    // 重试次数
+    private Integer retries;
+    // 超时时间
+    private Long timeout;
     // 任务参数
     private Map<String, Object> params;
 }

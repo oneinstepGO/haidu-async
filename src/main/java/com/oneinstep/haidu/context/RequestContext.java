@@ -18,6 +18,4 @@ public class RequestContext {
     private TaskConfig taskConfig;
     // 保存任务结果
     private Map<String, Result> taskResultMap = new ConcurrentHashMap<>();
-
-    private Map<String, String> taskClassNameMap;
 }

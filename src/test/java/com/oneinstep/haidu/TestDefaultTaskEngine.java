@@ -78,6 +78,7 @@ public class TestDefaultTaskEngine {
         Result result9999 = taskResultMap.get("9999");
         Assert.assertEquals("task1 数据不对", "DATA:1", result1.getData());
         Assert.assertEquals("task2 数据不对", "DATA:2", result2.getData());
+        Assert.assertEquals("task3 数据不对", "[DATA:1,DATA:2] -> DATA:3", result3.getData());
         Assert.assertEquals("task1001 数据不对", "[DATA:1,DATA:2] -> DATA:1001", result1001.getData());
         Assert.assertEquals("task1002 数据不对", "[DATA:1,DATA:2] -> DATA:1002", result1002.getData());
         Assert.assertEquals("task1003 数据不对", "[[DATA:1,DATA:2] -> DATA:1001] -> DATA:1003", result1003.getData());
