@@ -1,6 +1,6 @@
 package com.oneinstep.haidu.core;
 
-import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson2.JSON;
 import com.oneinstep.haidu.context.RequestContext;
 import com.oneinstep.haidu.result.Result;
 import org.slf4j.Logger;

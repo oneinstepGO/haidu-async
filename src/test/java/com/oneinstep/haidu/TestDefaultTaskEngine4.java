@@ -1,7 +1,7 @@
 package com.oneinstep.haidu;
 
 
-import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson2.JSONObject;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.oneinstep.haidu.config.TaskConfig;
 import com.oneinstep.haidu.context.RequestContext;
@@ -9,8 +9,8 @@ import com.oneinstep.haidu.core.TaskEngine;
 import com.oneinstep.haidu.exception.IllegalTaskConfigException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -20,12 +20,14 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 @Slf4j
 public class TestDefaultTaskEngine4 {
     private TaskConfig taskConfig;
     private ExecutorService executorService;
 
-    @Before
+    @BeforeEach
     public void init() {
 
         String valueStr = null;
@@ -47,13 +49,16 @@ public class TestDefaultTaskEngine4 {
                 new ThreadPoolExecutor.AbortPolicy());
     }
 
-    @Test(expected = IllegalTaskConfigException.class)
+    @Test
     public void testAsync() {
         RequestContext requestContext = new RequestContext();
         long start = System.currentTimeMillis();
         requestContext.setTaskConfig(this.taskConfig);
         TaskEngine taskEngine = TaskEngine.getInstance(executorService);
-        taskEngine.startEngine(requestContext);
+
+        assertThrows(IllegalTaskConfigException.class, () -> {
+            taskEngine.startEngine(requestContext);
+        });
 
         long end = System.currentTimeMillis();
         log.info("cost time:{}", end - start);

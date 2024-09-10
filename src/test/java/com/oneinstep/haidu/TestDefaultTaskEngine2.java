@@ -1,7 +1,7 @@
 package com.oneinstep.haidu;
 
 
-import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson2.JSONObject;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.oneinstep.haidu.config.TaskConfig;
 import com.oneinstep.haidu.context.RequestContext;
@@ -13,9 +13,8 @@ import com.oneinstep.haidu.task2.TaskA;
 import com.oneinstep.haidu.task2.TaskB;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -26,12 +25,14 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 @Slf4j
 public class TestDefaultTaskEngine2 {
     private TaskConfig taskConfig;
     private ExecutorService executorService;
 
-    @Before
+    @BeforeEach
     public void init() {
 
         String valueStr = null;
@@ -76,13 +77,13 @@ public class TestDefaultTaskEngine2 {
         Result result1005 = taskResultMap.get("2-1005");
 
         Result result9999 = taskResultMap.get("2-9999");
-        Assert.assertEquals("task1 数据不对", "DATA:2-1", result1.getData());
-        Assert.assertEquals("task1001 数据不对", "DATA:2-1 -> DATA:2-1001", result1001.getData());
-        Assert.assertEquals("task1002 数据不对", "DATA:2-1 -> DATA:2-1002", result1002.getData());
-        Assert.assertEquals("task1003 数据不对", "DATA:2-1 -> DATA:2-1003", result1003.getData());
-        Assert.assertEquals("task1004 数据不对", "[DATA:2-1 -> DATA:2-1001,DATA:2-1 -> DATA:2-1002,DATA:2-1 -> DATA:2-1003] -> DATA:2-1004", result1004.getData());
-        Assert.assertEquals("task1005 数据不对", "[DATA:2-1 -> DATA:2-1001,DATA:2-1 -> DATA:2-1002,DATA:2-1 -> DATA:2-1003] -> DATA:2-1005", result1005.getData());
-        Assert.assertEquals("task9999 数据不对", "[[DATA:2-1 -> DATA:2-1001,DATA:2-1 -> DATA:2-1002,DATA:2-1 -> DATA:2-1003] -> DATA:2-1004,[DATA:2-1 -> DATA:2-1001,DATA:2-1 -> DATA:2-1002,DATA:2-1 -> DATA:2-1003] -> DATA:2-1005] -> DATA:2-9999", result9999.getData());
+        assertEquals("DATA:2-1", result1.getData(), "task1 数据不对");
+        assertEquals("DATA:2-1 -> DATA:2-1001", result1001.getData(), "task1001 数据不对");
+        assertEquals("DATA:2-1 -> DATA:2-1002", result1002.getData(), "task1002 数据不对");
+        assertEquals("DATA:2-1 -> DATA:2-1003", result1003.getData(), "task1003 数据不对");
+        assertEquals("[DATA:2-1 -> DATA:2-1001,DATA:2-1 -> DATA:2-1002,DATA:2-1 -> DATA:2-1003] -> DATA:2-1004", result1004.getData(), "task1004 数据不对");
+        assertEquals("[DATA:2-1 -> DATA:2-1001,DATA:2-1 -> DATA:2-1002,DATA:2-1 -> DATA:2-1003] -> DATA:2-1005", result1005.getData(), "task1005 数据不对");
+        assertEquals("[[DATA:2-1 -> DATA:2-1001,DATA:2-1 -> DATA:2-1002,DATA:2-1 -> DATA:2-1003] -> DATA:2-1004,[DATA:2-1 -> DATA:2-1001,DATA:2-1 -> DATA:2-1002,DATA:2-1 -> DATA:2-1003] -> DATA:2-1005] -> DATA:2-9999", result9999.getData(), "task9999 数据不对");
     }
 
     @Test
