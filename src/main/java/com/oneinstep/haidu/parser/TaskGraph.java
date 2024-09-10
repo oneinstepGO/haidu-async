@@ -5,7 +5,6 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -52,11 +51,11 @@ public class TaskGraph {
      */
     public List<TaskNode> getAllTasks() {
         // 返回任务节点列表的不可修改视图
-        return Collections.unmodifiableList(new ArrayList<>(taskMap.values()));
+        return List.copyOf(taskMap.values());
     }
 
     public List<String> getAllTaskIds() {
-        return Collections.unmodifiableList(new ArrayList<>(taskMap.keySet()));
+        return List.copyOf(taskMap.keySet());
     }
 
     public String[] getDependencies(String taskId) {
