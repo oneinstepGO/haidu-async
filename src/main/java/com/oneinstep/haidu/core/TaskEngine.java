@@ -25,11 +25,6 @@ public class TaskEngine {
     // 线程池，用于并发执行任务
     private final ExecutorService taskThreadPool;
 
-    /**
-     * 运行时 task 类缓存，避免重复反射创建
-     */
-    private final Map<String, AbstractTask> taskInstanceMap = new ConcurrentHashMap<>();
-
     // 私有构造函数，允许传入自定义线程池
     private TaskEngine(ExecutorService taskThreadPool) {
         this.taskThreadPool = taskThreadPool != null ? taskThreadPool : new ThreadPoolExecutor(
@@ -64,6 +59,11 @@ public class TaskEngine {
      * @param context 请求上下文，包含任务配置
      */
     public void startEngine(RequestContext context) {
+        // 检查是否已经启动过引擎
+        if (context.isEngineStarted()) {
+            throw new IllegalStateException("任务引擎已经启动!");
+        }
+
         TaskConfig taskConfig = context.getTaskConfig();
         if (taskConfig == null) {
             log.warn("the task config is null.");
@@ -78,14 +78,14 @@ public class TaskEngine {
         // 第一组是前置任务,中间N个组是并行任务,最后一个组是后置任务
         // 前置任务
         List<String> preTasks = arrange.get(0);
-        arrangeToOneFuture(ExpressionParser.parseExpressions(preTasks, taskInstanceMap, taskConfig.getTaskDetailsMap()), context).join();
+        arrangeToOneFuture(ExpressionParser.parseExpressions(preTasks, context.getTaskInstanceMap(), taskConfig.getTaskDetailsMap()), context).join();
 
         // 并行任务
         if (arrange.size() > 2) {
             List<CompletableFuture<Void>> parallelFutures = new ArrayList<>();
             for (int i = 1; i < arrange.size() - 1; i++) {
                 List<String> parallelTasks = arrange.get(i);
-                CompletableFuture<Void> future = arrangeToOneFuture(ExpressionParser.parseExpressions(parallelTasks, taskInstanceMap, taskConfig.getTaskDetailsMap()), context);
+                CompletableFuture<Void> future = arrangeToOneFuture(ExpressionParser.parseExpressions(parallelTasks, context.getTaskInstanceMap(), taskConfig.getTaskDetailsMap()), context);
                 parallelFutures.add(future);
             }
             // 等待所有并行任务完成
@@ -98,11 +98,15 @@ public class TaskEngine {
         if (arrange.size() >= 2) {
             // 后置任务
             List<String> postTasks = arrange.get(arrange.size() - 1);
-            arrangeToOneFuture(ExpressionParser.parseExpressions(postTasks, taskInstanceMap, taskConfig.getTaskDetailsMap()), context).join();
+            arrangeToOneFuture(ExpressionParser.parseExpressions(postTasks, context.getTaskInstanceMap(), taskConfig.getTaskDetailsMap()), context).join();
         } else {
             log.warn("没有后置任务组...");
         }
 
+        // 设置引擎启动标志位
+        context.setEngineStarted(true);
+        // clear task instance map
+        context.clearTaskInstanceMap();
     }
 
     /**

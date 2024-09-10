@@ -58,7 +58,7 @@ public class TestDefaultTaskEngine4 {
 
         assertThrows(IllegalTaskConfigException.class, () -> {
             taskEngine.startEngine(requestContext);
-        });
+        }, "检测到循环依赖！");
 
         long end = System.currentTimeMillis();
         log.info("cost time:{}", end - start);

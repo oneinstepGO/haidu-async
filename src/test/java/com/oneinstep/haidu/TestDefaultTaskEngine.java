@@ -23,6 +23,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Slf4j
 public class TestDefaultTaskEngine {
@@ -57,6 +58,24 @@ public class TestDefaultTaskEngine {
         requestContext.setTaskConfig(this.taskConfig);
         TaskEngine taskEngine = TaskEngine.getInstance(executorService);
         taskEngine.startEngine(requestContext);
+
+        long end = System.currentTimeMillis();
+        log.info("cost time:{}", end - start);
+        assertResult(requestContext);
+    }
+
+    @Test
+    public void testAsyncAgain() {
+        RequestContext requestContext = new RequestContext();
+        long start = System.currentTimeMillis();
+        requestContext.setTaskConfig(this.taskConfig);
+        TaskEngine taskEngine = TaskEngine.getInstance(executorService);
+        taskEngine.startEngine(requestContext);
+
+        assertThrows(IllegalStateException.class, () -> {
+            // 重复启动
+            taskEngine.startEngine(requestContext);
+        }, "任务引擎已经启动!");
 
         long end = System.currentTimeMillis();
         log.info("cost time:{}", end - start);

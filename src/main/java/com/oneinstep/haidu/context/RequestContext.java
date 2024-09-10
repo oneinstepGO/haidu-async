@@ -1,6 +1,7 @@
 package com.oneinstep.haidu.context;
 
 import com.oneinstep.haidu.config.TaskConfig;
+import com.oneinstep.haidu.core.AbstractTask;
 import com.oneinstep.haidu.result.Result;
 import lombok.Data;
 
@@ -18,4 +19,19 @@ public class RequestContext {
     private TaskConfig taskConfig;
     // 保存任务结果
     private Map<String, Result> taskResultMap = new ConcurrentHashMap<>();
+
+    // 任务引擎是否已启动
+    private volatile boolean engineStarted = false;
+
+    // 任务引擎是否已停止
+    private volatile boolean engineStopped = false;
+
+    /**
+     * 运行时 task 类缓存，避免重复反射创建
+     */
+    private final Map<String, AbstractTask> taskInstanceMap = new ConcurrentHashMap<>();
+
+    public void clearTaskInstanceMap() {
+        taskInstanceMap.clear();
+    }
 }
