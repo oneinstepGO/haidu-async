@@ -1,12 +1,16 @@
 package com.oneinstep.haidu.core;
 
+import com.alibaba.fastjson2.JSON;
 import com.oneinstep.haidu.config.TaskConfig;
+import com.oneinstep.haidu.config.TaskDetail;
+import com.oneinstep.haidu.config.TaskParam;
 import com.oneinstep.haidu.context.RequestContext;
 import com.oneinstep.haidu.exception.IllegalTaskConfigException;
 import com.oneinstep.haidu.parser.ExpressionParser;
 import com.oneinstep.haidu.parser.TaskGraph;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -75,6 +79,9 @@ public class TaskEngine {
             throw new IllegalTaskConfigException("任务编排为空");
         }
 
+        // 处理任务参数
+        handleTaskParams(taskConfig.getTaskDetailsMap(), context);
+
         // 第一组是前置任务,中间N个组是并行任务,最后一个组是后置任务
         // 前置任务
         List<String> preTasks = arrange.get(0);
@@ -107,6 +114,97 @@ public class TaskEngine {
         context.setEngineStarted(true);
         // clear task instance map
         context.clearTaskInstanceMap();
+    }
+
+    private void handleTaskParams(Map<String, TaskDetail> taskDetailsMap, RequestContext context) {
+        taskDetailsMap.values().forEach(detail -> {
+            Map<String, Object> params = handleTaskParams(detail.getTaskParams(), context);
+            detail.setParams(params);
+        });
+    }
+
+    public Map<String, Object> handleTaskParams(List<TaskParam> taskParams, RequestContext context) {
+        if (CollectionUtils.isEmpty(taskParams)) {
+            return new HashMap<>();
+        }
+        Map<String, Object> params = new HashMap<>();
+        for (TaskParam taskParam : taskParams) {
+            TaskParam.Type type = taskParam.getType();
+            String value = taskParam.getValue();
+            Boolean required = taskParam.getRequired();
+            if (Boolean.TRUE.equals(required)) {
+                // 从 Context 中获取的参数在任务执行时处理
+                if (StringUtils.isEmpty(value) && type != TaskParam.Type.CONTEXT) {
+                    log.error("task param is required, but value is empty, taskParam:{}", taskParam);
+                    throw new IllegalTaskConfigException("task param is required, but value is empty, taskParam:" + taskParam);
+                }
+            } else {
+                if (StringUtils.isEmpty(value)) {
+                    continue;
+                }
+            }
+            try {
+                value = value.trim();
+                switch (type) {
+                    case STRING:
+                        params.put(taskParam.getName(), value);
+                        break;
+                    case INT:
+                        params.put(taskParam.getName(), Integer.parseInt(value));
+                        break;
+                    case LONG:
+                        params.put(taskParam.getName(), Long.parseLong(value));
+                        break;
+                    case DOUBLE:
+                        params.put(taskParam.getName(), Double.parseDouble(value));
+                        break;
+                    case BOOLEAN:
+                        params.put(taskParam.getName(), Boolean.parseBoolean(value));
+                        break;
+                    case LIST:
+                        params.put(taskParam.getName(), value.split(","));
+                        break;
+                    case MAP:
+                        String[] split = value.split(",");
+                        Map<String, String> map = new HashMap<>();
+                        for (String s : split) {
+                            String[] kv = s.split(":");
+                            map.put(kv[0], kv[1]);
+                        }
+                        params.put(taskParam.getName(), map);
+                        break;
+                    case JSON:
+                        if (JSON.isValid(value)) {
+                            params.put(taskParam.getName(), JSON.parse(value));
+                        }
+                        break;
+                    case JSON_ARRAY:
+                        if (JSON.isValidArray(value)) {
+                            params.put(taskParam.getName(), JSON.parseArray(value));
+                        }
+                        break;
+                    case CMS:
+                        // 从CMS中获取
+                        // TODO
+                        break;
+                    case CONTEXT:
+                        // 从请求上下文中获取
+                        // 任务执行时获取 value 为 key 的值
+                        if (!(value.startsWith("#(") && value.endsWith(")#"))) {
+                            log.error("task param value is not start with '\"#(' or end with ')#\"', taskParam:{}", taskParam);
+                            throw new IllegalTaskConfigException("CONTEXT task param value must be start with '\"#(' and end with ')#\"', taskParam:" + taskParam);
+                        }
+                        params.put(taskParam.getName(), value);
+                        break;
+                    default:
+                        break;
+                }
+            } catch (Exception e) {
+                log.error("handle task params error, taskParam:{}", taskParam, e);
+            }
+
+        }
+        return params;
     }
 
     /**

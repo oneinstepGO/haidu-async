@@ -78,6 +78,13 @@ public abstract class AbstractTask<T> implements Consumer<RequestContext> {
         boolean success = false;
         long startTime = System.currentTimeMillis();
 
+        // 处理任务参数，TYPE 为 CONTEXT
+        getParams().forEach((key, value) -> {
+            if (value instanceof String && ((String) value).startsWith("#(") && ((String) value).endsWith(")#")) {
+                getParams().put(key, requestContext.getRequestParam().get(((String) value).substring(2, ((String) value).length() - 2)));
+            }
+        });
+
         while (attempts <= getRetries() && !success) {
             try {
                 beforeInvoke(requestContext);

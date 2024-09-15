@@ -14,7 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Data
 public class RequestContext {
     // 请求上下文参数
-    private Map<String, Object> requestParam;
+    private Map<String, Object> requestParam = new ConcurrentHashMap<>();
     // 任务配置
     private TaskConfig taskConfig;
     // 保存任务结果
