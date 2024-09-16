@@ -43,6 +43,7 @@ public class YamlTaskDefinitionReader implements TaskDefinitionReader {
             return Collections.emptyList();
         }
 
+        // use json because yml read all object to LinkedHashMap
         try {
             return JSON.parseObject(JSON.toJSONString(o), new TypeReference<List<TaskConfig>>() {
             });

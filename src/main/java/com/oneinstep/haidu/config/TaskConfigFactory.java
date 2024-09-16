@@ -5,6 +5,9 @@ import org.apache.commons.collections4.CollectionUtils;
 import java.io.Reader;
 import java.util.List;
 
+/**
+ * 任务配置工厂
+ */
 public class TaskConfigFactory {
 
     private final TaskDefinitionReader reader;
@@ -12,6 +15,13 @@ public class TaskConfigFactory {
     public TaskConfigFactory(TaskDefinitionReader reader) {
         this.reader = reader;
     }
+
+    /**
+     * Create a list of task configs from a task descriptor.
+     * @param tasksDescriptor
+     * @return
+     * @throws Exception
+     */
     public List<TaskConfig> createConfigs(Reader tasksDescriptor) throws Exception {
         List<TaskConfig> configs = reader.read(tasksDescriptor);
 

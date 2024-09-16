@@ -16,7 +16,7 @@ public class JsonTaskDefinitionReader implements TaskDefinitionReader {
         while ((ch = reader.read()) != -1) {
             stringBuilder.append((char) ch);
         }
-        // parse string to map
+
         return JSON.parseObject(stringBuilder.toString(), new TypeReference<>() {
         });
 
