@@ -24,6 +24,7 @@
         <slf4j-api.version>2.1.0-alpha1</slf4j-api.version>
         <junit.version>5.11.0</junit.version>
         <mockito.version>5.13.0</mockito.version>
+        <snakeyaml.version>2.3</snakeyaml.version>
     </properties>
     <dependencies>
 
@@ -62,6 +63,12 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-collections4</artifactId>
             <version>${commons-collections4.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <version>${snakeyaml.version}</version>
         </dependency>
 
         <dependency>

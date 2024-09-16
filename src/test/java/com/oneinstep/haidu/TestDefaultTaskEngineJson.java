@@ -8,7 +8,6 @@ import com.oneinstep.haidu.config.TaskConfigFactory;
 import com.oneinstep.haidu.context.RequestContext;
 import com.oneinstep.haidu.core.TaskEngine;
 import com.oneinstep.haidu.result.Result;
-import com.oneinstep.haidu.task.*;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Slf4j
-public class TestDefaultTaskEngine {
+public class TestDefaultTaskEngineJson {
     private TaskConfig taskConfig;
     private ExecutorService executorService;
 
@@ -110,59 +109,4 @@ public class TestDefaultTaskEngine {
                 "-> DATA:1004,[[DATA:1,DATA:2] -> DATA:1002] -> DATA:1005] -> DATA:1006] -> DATA:9999", result9999.getData(), "task9999 数据不对");
     }
 
-    @Test
-    public void execOneByOne() {
-        RequestContext requestContext = new RequestContext();
-        long start = System.currentTimeMillis();
-
-        Task1 task1 = new Task1();
-        task1.setTaskId("1");
-        task1.accept(requestContext);
-
-        Task2 task2 = new Task2();
-        task2.setTaskId("2");
-        task2.accept(requestContext);
-
-        Task3 task3 = new Task3();
-        task3.setTaskId("3");
-        task3.accept(requestContext);
-
-        Task1001 task1001 = new Task1001();
-        task1001.setTaskId("1001");
-        task1001.accept(requestContext);
-
-        Task1002 task1002 = new Task1002();
-        task1002.setTaskId("1002");
-        task1002.accept(requestContext);
-
-        Task1004 task1004 = new Task1004();
-        task1004.setTaskId("1004");
-        task1004.accept(requestContext);
-
-        Task1003 task1003 = new Task1003();
-        task1003.setTaskId("1003");
-        task1003.accept(requestContext);
-
-        Task1005 task1005 = new Task1005();
-        task1005.setTaskId("1005");
-        task1005.accept(requestContext);
-
-        Task1006 task1006 = new Task1006();
-        task1006.setTaskId("1006");
-        task1006.accept(requestContext);
-
-        Task9998 task9998 = new Task9998();
-        task9998.setTaskId("9998");
-        task9998.accept(requestContext);
-
-        Task9999 task9999 = new Task9999();
-        task9999.setTaskId("9999");
-        task9999.accept(requestContext);
-
-        long end = System.currentTimeMillis();
-        log.info("cost time:{}", end - start);
-
-        assertResult(requestContext);
-
-    }
 }

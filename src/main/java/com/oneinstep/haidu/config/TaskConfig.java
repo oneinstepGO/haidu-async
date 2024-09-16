@@ -14,6 +14,10 @@ import java.util.Map;
 public class TaskConfig implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
+    // 编排名称
+    private String arrangeName;
+    // 编排描述
+    private String description;
     // 编排规则
     private List<List<String>> arrangeRule;
     // 任务详情

@@ -124,14 +124,14 @@ class TaskEngineTest {
     @Test
     void handleTaskParams_shouldHandleContextType() {
         List<TaskParam> taskParams = new ArrayList<>();
-        taskParams.add(createTaskParam("param1", TaskParam.Type.CONTEXT, "contextKey", true));
+        taskParams.add(createTaskParam("param1", TaskParam.Type.CONTEXT, "#(contextKey)#", true));
 
         // Set the context value
         context.getRequestParam().put("contextKey", "contextValue");
 
         Map<String, Object> params = taskEngine.handleTaskParams(taskParams, context);
 
-        assertEquals("contextValue", params.get("param1"));
+        assertEquals("#(contextKey)#", params.get("param1"));
     }
 
     @Test

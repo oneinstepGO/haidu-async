@@ -27,7 +27,4 @@ public class TaskDetail implements Serializable {
     private List<TaskParam> taskParams;
     // 处理后的任务参数
     private Map<String, Object> params;
-
-
-
 }

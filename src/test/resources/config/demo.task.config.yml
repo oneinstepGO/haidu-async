@@ -1,0 +1,54 @@
+asyncTasks:
+  - arrangeName: demo
+    description: "demo task"
+    arrangeRule:
+      - [ "1,2:3" ]
+      - [ "1001,1002","1001:1003","1002:1005","1001,1002:1004","1003,1004,1005:1006" ]
+      - [ "9998,9999" ]
+    taskDetailsMap:
+      1:
+        taskId: "1"
+        fullClassName: "com.oneinstep.haidu.task.Task1"
+        taskParams: [ ]
+      2:
+        taskId: "2"
+        fullClassName: "com.oneinstep.haidu.task.Task2"
+        taskParams: [ ]
+      3:
+        taskId: "3"
+        fullClassName: "com.oneinstep.haidu.task.Task3"
+        taskParams: [ ]
+      1001:
+        taskId: "1001"
+        fullClassName: "com.oneinstep.haidu.task.Task1001"
+        taskParams: [ ]
+      1002:
+        taskId: "1002"
+        fullClassName: "com.oneinstep.haidu.task.Task1002"
+        taskParams: [ ]
+      1003:
+        taskId: "1003"
+        fullClassName: "com.oneinstep.haidu.task.Task1003"
+        taskParams: [ ]
+      1004:
+        taskId: "1004"
+        fullClassName: "com.oneinstep.haidu.task.Task1004"
+        taskParams: [ ]
+      1005:
+        taskId: "1005"
+        fullClassName: "com.oneinstep.haidu.task.Task1005"
+        taskParams: [ ]
+      1006:
+        taskId: "1006"
+        fullClassName: "com.oneinstep.haidu.task.Task1006"
+        taskParams: [ ]
+      9998:
+        taskId: "9998"
+        fullClassName: "com.oneinstep.haidu.task.Task9998"
+        taskParams: [ ]
+      9999:
+        taskId: "9999"
+        fullClassName: "com.oneinstep.haidu.task.Task9999"
+        taskParams: [ ]
+
+
