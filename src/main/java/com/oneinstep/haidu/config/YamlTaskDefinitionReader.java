@@ -2,6 +2,7 @@ package com.oneinstep.haidu.config;
 
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.TypeReference;
+import com.oneinstep.haidu.exception.IllegalTaskConfigException;
 import lombok.extern.slf4j.Slf4j;
 import org.yaml.snakeyaml.Yaml;
 
@@ -32,7 +33,7 @@ public class YamlTaskDefinitionReader implements TaskDefinitionReader {
 
 
     @Override
-    public List<TaskConfig> read(Reader reader) throws Exception {
+    public List<TaskConfig> read(Reader reader) {
         Map map = yaml.loadAs(reader, Map.class);
         if (map == null) {
             return Collections.emptyList();
@@ -45,13 +46,12 @@ public class YamlTaskDefinitionReader implements TaskDefinitionReader {
 
         // use json because yml read all object to LinkedHashMap
         try {
-            return JSON.parseObject(JSON.toJSONString(o), new TypeReference<List<TaskConfig>>() {
+            return JSON.parseObject(JSON.toJSONString(o), new TypeReference<>() {
             });
-        }catch (Exception e) {
-            log.error("Failed to parse task config", e);
+        } catch (Exception e) {
+            throw new IllegalTaskConfigException("Failed to parse task config: + " + e.getMessage());
         }
 
-        return Collections.emptyList();
     }
 
 }

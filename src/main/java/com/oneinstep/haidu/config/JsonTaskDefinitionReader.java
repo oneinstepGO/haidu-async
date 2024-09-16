@@ -2,6 +2,7 @@ package com.oneinstep.haidu.config;
 
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.TypeReference;
+import com.oneinstep.haidu.exception.IllegalTaskConfigException;
 
 import java.io.Reader;
 import java.util.List;
@@ -17,8 +18,12 @@ public class JsonTaskDefinitionReader implements TaskDefinitionReader {
             stringBuilder.append((char) ch);
         }
 
-        return JSON.parseObject(stringBuilder.toString(), new TypeReference<>() {
-        });
+        try {
+            return JSON.parseObject(stringBuilder.toString(), new TypeReference<>() {
+            });
+        } catch (Exception e) {
+            throw new IllegalTaskConfigException("Failed to parse task config: + " + e.getMessage());
+        }
 
     }
 
