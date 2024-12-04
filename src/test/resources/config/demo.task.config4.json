@@ -1,0 +1,60 @@
+{
+  "arrangeName": "demo",
+  "description": "demo task",
+  "arrangeRule": [
+    [
+      "2-1"
+    ],
+    [
+      "2-1001:2-1002",
+      "2-1002:2-1003",
+      "2-1003:2-1001"
+    ],
+    [
+      "2-9999"
+    ]
+  ],
+  "taskDetailsMap": {
+    "2-1": {
+      "taskId": "2-1",
+      "fullClassName": "com.oneinstep.haidu.task2.Task1",
+      "taskParams": [
+        {
+          "param1": "value1"
+        }
+      ]
+    },
+    "2-1001": {
+      "taskId": "2-1001",
+      "fullClassName": "com.oneinstep.haidu.task2.TaskA",
+      "taskParams": [
+        {
+          "useId": "1001"
+        }
+      ]
+    },
+    "2-1002": {
+      "taskId": "2-1002",
+      "fullClassName": "com.oneinstep.haidu.task2.TaskA",
+      "taskParams": [
+        {
+          "useId": "1002"
+        }
+      ]
+    },
+    "2-1003": {
+      "taskId": "2-1003",
+      "fullClassName": "com.oneinstep.haidu.task2.TaskA",
+      "taskParams": [
+        {
+          "useId": "1003"
+        }
+      ]
+    },
+    "2-9999": {
+      "taskId": "2-9999",
+      "fullClassName": "com.oneinstep.haidu.task2.Task9999",
+      "taskParams": []
+    }
+  }
+}
