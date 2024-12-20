@@ -1,7 +1,12 @@
 package com.oneinstep.haidu.exception;
 
-public class IllegalTaskConfigException extends RuntimeException {
+/**
+ * 非法任务配置异常
+ */
+public class IllegalTaskConfigException extends HaiduException {
+
     public IllegalTaskConfigException(String message) {
         super(message);
     }
+
 }

@@ -2,6 +2,7 @@ package com.oneinstep.haidu.parser;
 
 import com.oneinstep.haidu.config.TaskDetail;
 import com.oneinstep.haidu.core.AbstractTask;
+import com.oneinstep.haidu.exception.HaiduException;
 import com.oneinstep.haidu.exception.IllegalTaskConfigException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -23,6 +24,9 @@ import java.util.Set;
 @Slf4j
 public class ExpressionParser {
 
+    private ExpressionParser() {
+    }
+
     /**
      * 解析任务表达式，生成任务图
      *
@@ -31,7 +35,8 @@ public class ExpressionParser {
      * @param taskDetailMap   任务详情映射
      * @return 解析后的任务图
      */
-    public static TaskGraph parseExpressions(List<String> expressions, Map<String, AbstractTask> taskInstanceMap, Map<String, TaskDetail> taskDetailMap) {
+    public static TaskGraph parseExpressions(List<String> expressions, Map<String, AbstractTask<?>> taskInstanceMap,
+                                             Map<String, TaskDetail> taskDetailMap) {
         TaskGraph graph = new TaskGraph();
 
         for (String expression : expressions) {
@@ -39,20 +44,25 @@ public class ExpressionParser {
             String[] parts = expression.split(":");
             String[] parallelTasks = parts[0].split(",");
 
+            // 处理并行任务的前置任务
             for (String taskId : parallelTasks) {
                 // 获取并存储任务实例
-                AbstractTask andStoreTask = getAndStoreTask(taskId, taskInstanceMap, taskDetailMap);
+                AbstractTask<?> task = getAndCacheTask(taskId, taskInstanceMap, taskDetailMap);
                 // 将任务添加到任务图中
-                graph.addTask(taskId, andStoreTask);
+                graph.addTask(taskId, task);
             }
 
+            // 处理依赖任务
             if (parts.length > 1) {
-                // 处理依赖任务
                 String[] dependentTaskIds = parts[1].split(",");
+                // 遍历依赖任务
                 for (String dependentTaskId : dependentTaskIds) {
-                    AbstractTask andStoreTask = getAndStoreTask(dependentTaskId, taskInstanceMap, taskDetailMap);
-                    graph.addTask(dependentTaskId, andStoreTask);
+                    // 获取并存储依赖任务实例
+                    AbstractTask<?> task = getAndCacheTask(dependentTaskId, taskInstanceMap, taskDetailMap);
+                    // 将依赖任务添加到任务图中
+                    graph.addTask(dependentTaskId, task);
 
+                    // 遍历并行任务
                     for (String taskId : parallelTasks) {
                         // 添加任务依赖关系
                         graph.addDependency(dependentTaskId, taskId);
@@ -77,9 +87,10 @@ public class ExpressionParser {
      * @param taskDetailMap   任务详情映射
      * @return 任务实例
      */
-    public static AbstractTask getAndStoreTask(String taskId, Map<String, AbstractTask> taskInstanceMap, Map<String, TaskDetail> taskDetailMap) {
+    public static AbstractTask<?> getAndCacheTask(String taskId, Map<String, AbstractTask<?>> taskInstanceMap,
+                                                  Map<String, TaskDetail> taskDetailMap) {
         // 从缓存中获取任务实例
-        AbstractTask task = taskInstanceMap.get(taskId);
+        AbstractTask<?> task = taskInstanceMap.get(taskId);
         TaskDetail taskDetail = taskDetailMap.get(taskId);
         String taskClassName = taskDetail.getFullClassName();
 
@@ -95,10 +106,10 @@ public class ExpressionParser {
             // 检查任务类名是否为空
             if (StringUtils.isBlank(taskClassName)) {
                 log.error("there is no task class name in the taskClassNameMap.");
-                throw new RuntimeException("无效taskClassName");
+                throw new HaiduException("无效taskClassName");
             }
             // 通过反射创建任务实例
-            task = (AbstractTask) Class.forName(taskClassName).getDeclaredConstructor().newInstance();
+            task = (AbstractTask<?>) Class.forName(taskClassName).getDeclaredConstructor().newInstance();
             task.setTaskId(taskId);
             task.setRetryTimes(retryTimes);
             task.setTimeout(timeout);
@@ -109,7 +120,7 @@ public class ExpressionParser {
             return task;
         } catch (Exception e) {
             log.error("Instantiation Exception during taskId={}, taskName={}", taskId, taskClassName, e);
-            throw new RuntimeException(e);
+            throw new HaiduException(e);
         }
     }
 

@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @Slf4j
-public class TestDefaultTaskEngine3 {
+class TestDefaultTaskEngine3 {
     private TaskConfig taskConfig;
     private ExecutorService executorService;
 
@@ -55,7 +55,7 @@ public class TestDefaultTaskEngine3 {
     }
 
     @Test
-    public void testAsync() {
+    void testAsync() {
         RequestContext requestContext = new RequestContext();
         long start = System.currentTimeMillis();
         requestContext.setTaskConfig(this.taskConfig);
@@ -68,15 +68,15 @@ public class TestDefaultTaskEngine3 {
     }
 
     private static void assertResult(RequestContext requestContext) {
-        Map<String, Result> taskResultMap = requestContext.getTaskResultMap();
-        Result result1 = taskResultMap.get("2-1");
-        Result result1001 = taskResultMap.get("2-1001");
-        Result result1002 = taskResultMap.get("2-1002");
-        Result result1003 = taskResultMap.get("2-1003");
-        Result result1004 = taskResultMap.get("2-1004");
-        Result result1005 = taskResultMap.get("2-1005");
+        Map<String, Result<?>> taskResultMap = requestContext.getTaskResultMap();
+        Result<?> result1 = taskResultMap.get("2-1");
+        Result<?> result1001 = taskResultMap.get("2-1001");
+        Result<?> result1002 = taskResultMap.get("2-1002");
+        Result<?> result1003 = taskResultMap.get("2-1003");
+        Result<?> result1004 = taskResultMap.get("2-1004");
+        Result<?> result1005 = taskResultMap.get("2-1005");
 
-        Result result9999 = taskResultMap.get("2-9999");
+        Result<?> result9999 = taskResultMap.get("2-9999");
         assertEquals("DATA:2-1", result1.getData(), "task1 数据不对");
         assertEquals("DATA:2-1 -> DATA:2-1001", result1001.getData(), "task1001 数据不对");
         assertEquals("DATA:2-1 -> DATA:2-1002", result1002.getData(), "task1002 数据不对");
@@ -87,7 +87,7 @@ public class TestDefaultTaskEngine3 {
     }
 
     @Test
-    public void execOneByOne() {
+    void execOneByOne() {
         RequestContext requestContext = new RequestContext();
         long start = System.currentTimeMillis();
 

@@ -14,8 +14,12 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class TaskGraph {
 
-    // 使用并发哈希映射来存储任务节点，保证线程安全
-    private Map<String, TaskNode> taskMap = new ConcurrentHashMap<>();
+    /**
+     * 任务节点映射，用于存储任务节点
+     * key: 任务ID
+     * value: 任务节点
+     */
+    private final Map<String, TaskNode> taskMap = new ConcurrentHashMap<>();
 
     /**
      * 添加任务到任务图中
@@ -23,7 +27,7 @@ public class TaskGraph {
      * @param taskId 任务ID
      * @param task   任务实例
      */
-    public void addTask(String taskId, AbstractTask task) {
+    public void addTask(String taskId, AbstractTask<?> task) {
         // 如果任务ID不存在，则添加新的任务节点
         taskMap.putIfAbsent(taskId, new TaskNode(taskId, task));
     }
@@ -54,10 +58,21 @@ public class TaskGraph {
         return List.copyOf(taskMap.values());
     }
 
+    /**
+     * 获取所有任务ID
+     *
+     * @return 任务ID列表
+     */
     public List<String> getAllTaskIds() {
         return List.copyOf(taskMap.keySet());
     }
 
+    /**
+     * 获取任务的依赖任务ID列表
+     *
+     * @param taskId 任务ID
+     * @return 依赖任务ID列表
+     */
     public String[] getDependencies(String taskId) {
         TaskNode task = taskMap.get(taskId);
         if (task == null) {
@@ -77,7 +92,7 @@ public class TaskGraph {
         String taskId;
 
         // 任务实例
-        AbstractTask task;
+        AbstractTask<?> task;
 
         // 依赖任务列表
         List<TaskNode> dependencies = new ArrayList<>();
@@ -88,7 +103,7 @@ public class TaskGraph {
          * @param taskId 任务ID
          * @param task   任务实例
          */
-        TaskNode(String taskId, AbstractTask task) {
+        TaskNode(String taskId, AbstractTask<?> task) {
             this.taskId = taskId;
             this.task = task;
         }

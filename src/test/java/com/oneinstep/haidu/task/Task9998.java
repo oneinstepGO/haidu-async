@@ -12,7 +12,7 @@ import java.util.concurrent.ThreadLocalRandom;
 public class Task9998 extends AbstractTask<String> {
     @Override
     protected Result<String> invoke(RequestContext requestContext) {
-        Result result1006 = requestContext.getTaskResultMap().get("1006");
+        Result<?> result1006 = requestContext.getTaskResultMap().get("1006");
         ThreadLocalRandom random = ThreadLocalRandom.current();
         try {
             Thread.sleep(100 + random.nextInt(50));

@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Slf4j
-public class TestDefaultTaskEngine4 {
+class TestDefaultTaskEngine4 {
     private TaskConfig taskConfig;
     private ExecutorService executorService;
 
@@ -50,7 +50,7 @@ public class TestDefaultTaskEngine4 {
     }
 
     @Test
-    public void testAsync() {
+    void testAsync() {
         RequestContext requestContext = new RequestContext();
         long start = System.currentTimeMillis();
         requestContext.setTaskConfig(this.taskConfig);

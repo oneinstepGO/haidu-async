@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Slf4j
-public class TestDefaultTaskEngineYaml {
+class TestDefaultTaskEngineYaml {
     private TaskConfig taskConfig;
     private ExecutorService executorService;
 
@@ -50,7 +50,7 @@ public class TestDefaultTaskEngineYaml {
     }
 
     @Test
-    public void testAsync() {
+    void testAsync() {
         RequestContext requestContext = new RequestContext();
         long start = System.currentTimeMillis();
         requestContext.setTaskConfig(this.taskConfig);
@@ -63,7 +63,7 @@ public class TestDefaultTaskEngineYaml {
     }
 
     @Test
-    public void testAsyncAgain() {
+    void testAsyncAgain() {
         RequestContext requestContext = new RequestContext();
         long start = System.currentTimeMillis();
         requestContext.setTaskConfig(this.taskConfig);
@@ -81,18 +81,18 @@ public class TestDefaultTaskEngineYaml {
     }
 
     private static void assertResult(RequestContext requestContext) {
-        Map<String, Result> taskResultMap = requestContext.getTaskResultMap();
-        Result result1 = taskResultMap.get("1");
-        Result result2 = taskResultMap.get("2");
-        Result result3 = taskResultMap.get("3");
-        Result result1001 = taskResultMap.get("1001");
-        Result result1002 = taskResultMap.get("1002");
-        Result result1003 = taskResultMap.get("1003");
-        Result result1004 = taskResultMap.get("1004");
-        Result result1005 = taskResultMap.get("1005");
-        Result result1006 = taskResultMap.get("1006");
-        Result result9998 = taskResultMap.get("9998");
-        Result result9999 = taskResultMap.get("9999");
+        Map<String, Result<?>> taskResultMap = requestContext.getTaskResultMap();
+        Result<?> result1 = taskResultMap.get("1");
+        Result<?> result2 = taskResultMap.get("2");
+        Result<?> result3 = taskResultMap.get("3");
+        Result<?> result1001 = taskResultMap.get("1001");
+        Result<?> result1002 = taskResultMap.get("1002");
+        Result<?> result1003 = taskResultMap.get("1003");
+        Result<?> result1004 = taskResultMap.get("1004");
+        Result<?> result1005 = taskResultMap.get("1005");
+        Result<?> result1006 = taskResultMap.get("1006");
+        Result<?> result9998 = taskResultMap.get("9998");
+        Result<?> result9999 = taskResultMap.get("9999");
         assertEquals("DATA:1", result1.getData(), "task1 数据不对");
         assertEquals("DATA:2", result2.getData(), "task2 数据不对");
         assertEquals("[DATA:1,DATA:2] -> DATA:3", result3.getData(), "task3 数据不对");

@@ -10,6 +10,9 @@ import java.util.List;
  */
 public class TaskConfigFactory {
 
+    /**
+     * 任务定义读取器
+     */
     private final TaskDefinitionReader reader;
 
     public TaskConfigFactory(TaskDefinitionReader reader) {
@@ -17,11 +20,11 @@ public class TaskConfigFactory {
     }
 
     /**
-     * Create a list of task configs from a task descriptor.
+     * 从任务描述符创建任务配置列表
      *
-     * @param tasksDescriptor
-     * @return
-     * @throws Exception
+     * @param tasksDescriptor 任务描述符
+     * @return 任务配置列表
+     * @throws Exception 创建任务配置时发生的异常
      */
     public List<TaskConfig> createConfigs(Reader tasksDescriptor) throws Exception {
         List<TaskConfig> configs = reader.read(tasksDescriptor);
@@ -32,6 +35,13 @@ public class TaskConfigFactory {
         return configs;
     }
 
+    /**
+     * 从任务描述符创建单个任务配置
+     *
+     * @param tasksDescriptor 任务描述符
+     * @return 任务配置
+     * @throws Exception 创建任务配置时发生的异常
+     */
     public TaskConfig createConfig(Reader tasksDescriptor) throws Exception {
         List<TaskConfig> taskConfigs = createConfigs(tasksDescriptor);
         if (CollectionUtils.isEmpty(taskConfigs)) {

@@ -28,7 +28,7 @@ class TaskEngineTest {
     @Test
     void handleTaskParams_shouldHandleStringType() {
         List<TaskParam> taskParams = new ArrayList<>();
-        taskParams.add(createTaskParam("param1", TaskParam.Type.STRING, "value1", true));
+        taskParams.add(createTaskParam(TaskParam.Type.STRING, "value1"));
 
         Map<String, Object> params = taskEngine.handleTaskParams(taskParams, context);
 
@@ -38,7 +38,7 @@ class TaskEngineTest {
     @Test
     void handleTaskParams_shouldHandleIntType() {
         List<TaskParam> taskParams = new ArrayList<>();
-        taskParams.add(createTaskParam("param1", TaskParam.Type.INT, "123", true));
+        taskParams.add(createTaskParam(TaskParam.Type.INT, "123"));
 
         Map<String, Object> params = taskEngine.handleTaskParams(taskParams, context);
 
@@ -48,7 +48,7 @@ class TaskEngineTest {
     @Test
     void handleTaskParams_shouldHandleBooleanType() {
         List<TaskParam> taskParams = new ArrayList<>();
-        taskParams.add(createTaskParam("param1", TaskParam.Type.BOOLEAN, "true", true));
+        taskParams.add(createTaskParam(TaskParam.Type.BOOLEAN, "true"));
 
         Map<String, Object> params = taskEngine.handleTaskParams(taskParams, context);
 
@@ -58,7 +58,7 @@ class TaskEngineTest {
     @Test
     void handleTaskParams_shouldHandleListType() {
         List<TaskParam> taskParams = new ArrayList<>();
-        taskParams.add(createTaskParam("param1", TaskParam.Type.LIST, "a,b,c", true));
+        taskParams.add(createTaskParam(TaskParam.Type.LIST, "a,b,c"));
 
         Map<String, Object> params = taskEngine.handleTaskParams(taskParams, context);
 
@@ -69,7 +69,7 @@ class TaskEngineTest {
     @Test
     void handleTaskParams_shouldHandleMapType() {
         List<TaskParam> taskParams = new ArrayList<>();
-        taskParams.add(createTaskParam("param1", TaskParam.Type.MAP, "key1:value1,key2:value2", true));
+        taskParams.add(createTaskParam(TaskParam.Type.MAP, "key1:value1,key2:value2"));
 
         Map<String, Object> params = taskEngine.handleTaskParams(taskParams, context);
 
@@ -83,7 +83,7 @@ class TaskEngineTest {
     @Test
     void handleTaskParams_shouldHandleJsonType() {
         List<TaskParam> taskParams = new ArrayList<>();
-        taskParams.add(createTaskParam("param1", TaskParam.Type.JSON, "{\"key\":\"value\"}", true));
+        taskParams.add(createTaskParam(TaskParam.Type.JSON, "{\"key\":\"value\"}"));
 
         Map<String, Object> params = taskEngine.handleTaskParams(taskParams, context);
 
@@ -96,7 +96,7 @@ class TaskEngineTest {
     @Test
     void handleTaskParams_shouldHandleJsonArrayType() {
         List<TaskParam> taskParams = new ArrayList<>();
-        taskParams.add(createTaskParam("param1", TaskParam.Type.JSON_ARRAY, "[\"value1\",\"value2\"]", true));
+        taskParams.add(createTaskParam(TaskParam.Type.JSON_ARRAY, "[\"value1\",\"value2\"]"));
 
         Map<String, Object> params = taskEngine.handleTaskParams(taskParams, context);
 
@@ -108,23 +108,9 @@ class TaskEngineTest {
     }
 
     @Test
-    void handleTaskParams_shouldHandleCmsType() {
-        List<TaskParam> taskParams = new ArrayList<>();
-        taskParams.add(createTaskParam("param1", TaskParam.Type.CMS, "cmsKey", true));
-
-        // Mock the CMS fetching logic if needed
-        // For now, let's assume it returns a fixed value
-//        context.setCmsData("cmsKey", "cmsValue");
-//
-//        Map<String, Object> params = taskEngine.handleTaskParams(taskParams, context);
-//
-//        assertEquals("cmsValue", params.get("param1"));
-    }
-
-    @Test
     void handleTaskParams_shouldHandleContextType() {
         List<TaskParam> taskParams = new ArrayList<>();
-        taskParams.add(createTaskParam("param1", TaskParam.Type.CONTEXT, "#(contextKey)#", true));
+        taskParams.add(createTaskParam(TaskParam.Type.CONTEXT, "#(contextKey)#"));
 
         // Set the context value
         context.getRequestParam().put("contextKey", "contextValue");
@@ -137,7 +123,7 @@ class TaskEngineTest {
     @Test
     void handleTaskParams_shouldThrowExceptionForRequiredParam() {
         List<TaskParam> taskParams = new ArrayList<>();
-        taskParams.add(createTaskParam("param1", TaskParam.Type.STRING, "", true));
+        taskParams.add(createTaskParam(TaskParam.Type.STRING, ""));
 
         IllegalTaskConfigException exception = assertThrows(IllegalTaskConfigException.class, () -> {
             taskEngine.handleTaskParams(taskParams, context);
@@ -146,18 +132,18 @@ class TaskEngineTest {
         assertTrue(exception.getMessage().contains("task param is required, but value is empty"));
     }
 
-    private TaskParam createTaskParam(String name, TaskParam.Type type, String value, Boolean required) {
+    private TaskParam createTaskParam(TaskParam.Type type, String value) {
         TaskParam taskParam = new TaskParam();
-        taskParam.setName(name);
+        taskParam.setName("param1");
         taskParam.setType(type);
         taskParam.setValue(value);
-        taskParam.setRequired(required);
+        taskParam.setRequired(true);
         return taskParam;
     }
 
 
     @Test
-    public void test() {
+    void test() {
         Map<String, Object> params = new HashMap<>();
         params.put("key", "#(key_in_request)#");
         Map<String, Object> requestParam = new HashMap<>();

@@ -5,6 +5,9 @@ import lombok.Data;
 import java.io.Serial;
 import java.io.Serializable;
 
+/**
+ * 任务参数
+ */
 @Data
 public class TaskParam implements Serializable {
     @Serial
@@ -31,7 +34,9 @@ public class TaskParam implements Serializable {
      */
     private String description;
 
-
+    /**
+     * 任务参数类型
+     */
     public enum Type {
         STRING,
         INT,

@@ -18,7 +18,7 @@ public class RequestContext {
     // 任务配置
     private TaskConfig taskConfig;
     // 保存任务结果
-    private Map<String, Result> taskResultMap = new ConcurrentHashMap<>();
+    private Map<String, Result<?>> taskResultMap = new ConcurrentHashMap<>();
 
     // 任务引擎是否已启动
     private volatile boolean engineStarted = false;
@@ -29,8 +29,11 @@ public class RequestContext {
     /**
      * 运行时 task 类缓存，避免重复反射创建
      */
-    private final Map<String, AbstractTask> taskInstanceMap = new ConcurrentHashMap<>();
+    private final Map<String, AbstractTask<?>> taskInstanceMap = new ConcurrentHashMap<>();
 
+    /**
+     * 清空任务实例缓存
+     */
     public void clearTaskInstanceMap() {
         taskInstanceMap.clear();
     }

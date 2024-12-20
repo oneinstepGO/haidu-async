@@ -21,12 +21,12 @@ public class TaskA extends AbstractTask<String> {
         log.info("the params of taskA is: {}", getParams());
         String data;
         if ("2-2001".equals(this.getTaskId()) || "2-2002".equals(this.getTaskId()) || "2-2003".equals(this.getTaskId())) {
-            Result result1 = requestContext.getTaskResultMap().get("2-1");
+            Result<?> result1 = requestContext.getTaskResultMap().get("2-1");
             data = result1.getData() + " -> DATA:" + this.getTaskId();
         } else {
-            Result result2001 = requestContext.getTaskResultMap().get("2-2001");
-            Result result2002 = requestContext.getTaskResultMap().get("2-2002");
-            Result result2003 = requestContext.getTaskResultMap().get("2-2003");
+            Result<?> result2001 = requestContext.getTaskResultMap().get("2-2001");
+            Result<?> result2002 = requestContext.getTaskResultMap().get("2-2002");
+            Result<?> result2003 = requestContext.getTaskResultMap().get("2-2003");
             data = "[" + result2001.getData() + "," + result2002.getData() + "," + result2003.getData() + "]" + " -> DATA:" + this.getTaskId();
         }
         return Result.success(data);

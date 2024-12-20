@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @Slf4j
-public class TestDefaultTaskEngine5 {
+class TestDefaultTaskEngine5 {
     private TaskConfig taskConfig;
     private ExecutorService executorService;
 
@@ -51,7 +51,7 @@ public class TestDefaultTaskEngine5 {
     }
 
     @Test
-    public void testAsync() {
+    void testAsync() {
         RequestContext requestContext = new RequestContext();
         long start = System.currentTimeMillis();
         requestContext.setTaskConfig(this.taskConfig);
@@ -64,15 +64,15 @@ public class TestDefaultTaskEngine5 {
     }
 
     private static void assertResult(RequestContext requestContext) {
-        Map<String, Result> taskResultMap = requestContext.getTaskResultMap();
-        Result result1 = taskResultMap.get("2-1");
-        Result result1001 = taskResultMap.get("2-1001");
-        Result result1002 = taskResultMap.get("2-1002");
-        Result result1003 = taskResultMap.get("2-1003");
-        Result result1004 = taskResultMap.get("2-1004");
-        Result result1005 = taskResultMap.get("2-1005");
+        Map<String, Result<?>> taskResultMap = requestContext.getTaskResultMap();
+        Result<?> result1 = taskResultMap.get("2-1");
+        Result<?> result1001 = taskResultMap.get("2-1001");
+        Result<?> result1002 = taskResultMap.get("2-1002");
+        Result<?> result1003 = taskResultMap.get("2-1003");
+        Result<?> result1004 = taskResultMap.get("2-1004");
+        Result<?> result1005 = taskResultMap.get("2-1005");
 
-        Result result9999 = taskResultMap.get("2-9999");
+        Result<?> result9999 = taskResultMap.get("2-9999");
         assertEquals("DATA:2-1", result1.getData(), "task1 数据不对");
         assertEquals("DATA:2-1 -> DATA:2-1001", result1001.getData(), "task1001 数据不对");
         assertEquals("DATA:2-1 -> DATA:2-1002", result1002.getData(), "task1002 数据不对");
@@ -82,11 +82,11 @@ public class TestDefaultTaskEngine5 {
         assertEquals("[[DATA:2-1 -> DATA:2-1001,DATA:2-1 -> DATA:2-1002,DATA:2-1 -> DATA:2-1003] -> DATA:2-1004,[DATA:2-1 -> DATA:2-1001,DATA:2-1 -> DATA:2-1002,DATA:2-1 -> DATA:2-1003] -> DATA:2-1005] -> DATA:2-9999", result9999.getData(), "task9999 数据不对");
 
 
-        Result result2001 = taskResultMap.get("2-2001");
-        Result result2002 = taskResultMap.get("2-2002");
-        Result result2003 = taskResultMap.get("2-2003");
-        Result result2004 = taskResultMap.get("2-2004");
-        Result result2005 = taskResultMap.get("2-2005");
+        Result<?> result2001 = taskResultMap.get("2-2001");
+        Result<?> result2002 = taskResultMap.get("2-2002");
+        Result<?> result2003 = taskResultMap.get("2-2003");
+        Result<?> result2004 = taskResultMap.get("2-2004");
+        Result<?> result2005 = taskResultMap.get("2-2005");
 
         assertEquals("DATA:2-1 -> DATA:2-2001", result2001.getData(), "task2001 数据不对");
         assertEquals("DATA:2-1 -> DATA:2-2002", result2002.getData(), "task2002 数据不对");
