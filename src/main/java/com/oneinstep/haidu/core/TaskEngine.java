@@ -60,62 +60,66 @@ public class TaskEngine {
      * @param context 请求上下文，包含任务配置
      */
     public void startEngine(RequestContext context) {
-        // 检查是否已经启动过引擎
-        if (context.isEngineStarted()) {
-            throw new IllegalStateException("任务引擎已经启动!");
-        }
-
-        // 获取任务配置
-        TaskConfig taskConfig = context.getTaskConfig();
-        if (taskConfig == null) {
-            log.warn("the task config is null.");
-            throw new IllegalTaskConfigException("任务配置为空");
-        }
-        // 获取任务编排规则
-        List<List<String>> arrange = taskConfig.getArrangeRule();
-        if (CollectionUtils.isEmpty(arrange)) {
-            log.warn("the task arrange is empty...");
-            throw new IllegalTaskConfigException("任务编排为空");
-        }
-
-        // 处理任务参数
-        handleTaskParams(taskConfig.getTaskDetailsMap(), context);
-
-        // 第一组是前置任务,中间N个组是并行任务,最后一个组是后置任务
-        // 前置任务
-        List<String> preTasks = arrange.get(0);
-        arrangeToOneFuture(ExpressionParser.parseExpressions(preTasks, context.getTaskInstanceMap(),
-                taskConfig.getTaskDetailsMap()), context).join();
-
-        // 并行任务
-        if (arrange.size() > 2) {
-            List<CompletableFuture<Void>> parallelFutures = new ArrayList<>();
-            for (int i = 1; i < arrange.size() - 1; i++) {
-                List<String> parallelTasks = arrange.get(i);
-                CompletableFuture<Void> future = arrangeToOneFuture(ExpressionParser.parseExpressions(parallelTasks,
-                        context.getTaskInstanceMap(), taskConfig.getTaskDetailsMap()), context);
-                parallelFutures.add(future);
+        try {
+            // 检查是否已经启动过引擎
+            if (context.isEngineStarted()) {
+                throw new IllegalStateException("任务引擎已经启动!");
             }
-            // 等待所有并行任务完成
-            CompletableFuture.allOf(parallelFutures.toArray(new CompletableFuture[0])).join();
-        } else {
-            log.warn("没有并行任务组...");
-        }
 
-        // 后置任务
-        if (arrange.size() >= 2) {
-            // 后置任务
-            List<String> postTasks = arrange.get(arrange.size() - 1);
-            arrangeToOneFuture(ExpressionParser.parseExpressions(postTasks, context.getTaskInstanceMap(),
+            // 获取任务配置
+            TaskConfig taskConfig = context.getTaskConfig();
+            if (taskConfig == null) {
+                log.warn("the task config is null.");
+                throw new IllegalTaskConfigException("任务配置为空");
+            }
+            // 获取任务编排规则
+            List<List<String>> arrange = taskConfig.getArrangeRule();
+            if (CollectionUtils.isEmpty(arrange)) {
+                log.warn("the task arrange is empty...");
+                throw new IllegalTaskConfigException("任务编排为空");
+            }
+
+            // 处理任务参数
+            handleTaskParams(taskConfig.getTaskDetailsMap(), context);
+
+            // 第一组是前置任务,中间N个组是并行任务,最后一个组是后置任务
+            // 前置任务
+            List<String> preTasks = arrange.get(0);
+            arrangeToOneFuture(ExpressionParser.parseExpressions(preTasks, context.getTaskInstanceMap(),
                     taskConfig.getTaskDetailsMap()), context).join();
-        } else {
-            log.warn("没有后置任务组...");
-        }
 
-        // 设置引擎启动标志位
-        context.setEngineStarted(true);
-        // 清空任务实例缓存
-        context.clearTaskInstanceMap();
+            // 并行任务
+            if (arrange.size() > 2) {
+                List<CompletableFuture<Void>> parallelFutures = new ArrayList<>();
+                for (int i = 1; i < arrange.size() - 1; i++) {
+                    List<String> parallelTasks = arrange.get(i);
+                    CompletableFuture<Void> future = arrangeToOneFuture(ExpressionParser.parseExpressions(parallelTasks,
+                            context.getTaskInstanceMap(), taskConfig.getTaskDetailsMap()), context);
+                    parallelFutures.add(future);
+                }
+                // 等待所有并行任务完成
+                CompletableFuture.allOf(parallelFutures.toArray(new CompletableFuture[0])).join();
+            } else {
+                log.warn("没有并行任务组...");
+            }
+
+            // 后置任务
+            if (arrange.size() >= 2) {
+                // 后置任务
+                List<String> postTasks = arrange.get(arrange.size() - 1);
+                arrangeToOneFuture(ExpressionParser.parseExpressions(postTasks, context.getTaskInstanceMap(),
+                        taskConfig.getTaskDetailsMap()), context).join();
+            } else {
+                log.warn("没有后置任务组...");
+            }
+
+            // 设置引擎启动标志位
+            context.setEngineStarted(true);
+
+        } finally {
+            // 清空任务实例缓存
+            context.clearTaskInstanceMap();
+        }
     }
 
     /**

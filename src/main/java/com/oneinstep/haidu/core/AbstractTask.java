@@ -69,18 +69,41 @@ public abstract class AbstractTask<T> implements Consumer<RequestContext> {
     }
 
     /**
-     * 任务执行异常处理
+     * 任务执行错误处理
      *
-     * @param requestContext 请求上下文
-     * @param e              异常
+     * @param context 请求上下文
+     * @param e       异常
      */
-    protected void whenException(RequestContext requestContext, Exception e) {
-        getLogger().error("taskId:{} invoke exception.", getTaskId(), e);
+    protected void onError(RequestContext context, Throwable e) {
+        getLogger().error("taskId:{} invoke error.", getTaskId(), e);
         throw new RuntimeException(e);
     }
 
+    /**
+     * 任务执行超时处理
+     *
+     * @param context 请求上下文
+     */
+    protected void onTimeout(RequestContext context) {
+        getLogger().warn("taskId:{} invoke timeout.", getTaskId());
+    }
+
+    /**
+     * 任务执行取消处理
+     *
+     * @param context 请求上下文
+     */
+    protected void onCancel(RequestContext context) {
+        getLogger().warn("taskId:{} invoke cancel.", getTaskId());
+    }
+
     @Override
-    public void accept(RequestContext requestContext) {
+    public final Consumer<RequestContext> andThen(Consumer<? super RequestContext> after) {
+        return Consumer.super.andThen(after);
+    }
+
+    @Override
+    public final void accept(RequestContext requestContext) {
         int attempts = 0;
         boolean success = false;
         long startTime = System.currentTimeMillis();
@@ -102,7 +125,7 @@ public abstract class AbstractTask<T> implements Consumer<RequestContext> {
                 Result<T> result = invoke(requestContext);
                 // 检查任务是否超时
                 if (isTimeout(startTime)) {
-                    getLogger().warn("taskId:{} invoke timeout.", getTaskId());
+                    onTimeout(requestContext);
                     break;
                 }
                 // 检查任务执行结果并存储
@@ -110,25 +133,10 @@ public abstract class AbstractTask<T> implements Consumer<RequestContext> {
 
             } catch (Exception e) {
                 // 处理任务执行异常
-                handleException(requestContext, e, attempts);
+                onError(requestContext, e);
             }
             // 重试次数加1
             attempts++;
-        }
-    }
-
-    /**
-     * 处理任务执行异常
-     *
-     * @param requestContext 请求上下文
-     * @param e              异常
-     * @param attempts       重试次数
-     */
-    private void handleException(RequestContext requestContext, Exception e, int attempts) {
-        if (attempts == getRetries()) {
-            whenException(requestContext, e);
-        } else {
-            getLogger().warn("taskId:{} invoke exception, retrying... Attempt: {}", getTaskId(), attempts + 1, e);
         }
     }
 

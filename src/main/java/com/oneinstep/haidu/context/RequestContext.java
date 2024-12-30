@@ -37,4 +37,14 @@ public class RequestContext {
     public void clearTaskInstanceMap() {
         taskInstanceMap.clear();
     }
+
+    /**
+     * 获取任务实例
+     *
+     * @param taskId 任务ID
+     * @return 任务实例
+     */
+    public AbstractTask<?> getTaskInstance(String taskId) {
+        return taskInstanceMap.get(taskId);
+    }
 }
