@@ -132,11 +132,13 @@ public abstract class AbstractTask<T> implements Consumer<RequestContext> {
                 success = checkAndPutResult(requestContext, result);
 
             } catch (Exception e) {
-                // 处理任务执行异常
-                onError(requestContext, e);
+                if (attempts >= getRetries()) {
+                    // 处理任务执行异常
+                    onError(requestContext, e);
+                }
+                // 重试次数加1
+                attempts++;
             }
-            // 重试次数加1
-            attempts++;
         }
     }
 

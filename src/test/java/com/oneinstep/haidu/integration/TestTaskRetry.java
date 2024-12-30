@@ -13,29 +13,29 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
- * 测试任务超时
+ * 测试任务重试
  */
-class TestTaskTimeout {
+public class TestTaskRetry {
 
-    // 添加更多测试场景
     @Test
-    void shouldHandleTaskTimeout() throws Exception {
+    void shouldHandleTaskRetry() throws Exception {
         // 准备配置
         String config = """
                 {
-                  "arrangeName": "test-timeout",
-                  "description": "Task timeout test",
+                  "arrangeName": "retry-test",
+                  "description": "Retry test",
                   "arrangeRule": [
-                    ["timeOutTask"]
+                    ["retryTask"]
                   ],
                   "taskDetailsMap": {
-                    "timeOutTask": {
-                      "taskId": "timeOutTask",
-                      "fullClassName": "com.oneinstep.haidu.task.TimeOutTask",
-                      "timeout": 1000,
+                    "retryTask": {
+                      "taskId": "retryTask",
+                      "retries": 2,
+                      "fullClassName": "com.oneinstep.haidu.task.RetryTask",
                       "taskParams": [
                 
                       ]
@@ -43,6 +43,7 @@ class TestTaskTimeout {
                   }
                 }
                 """;
+
         // 创建上下文
         RequestContext context = new RequestContext();
 
@@ -51,7 +52,6 @@ class TestTaskTimeout {
         TaskConfig taskConfig = factory.createConfig(new StringReader(config));
         context.setTaskConfig(taskConfig);
 
-        // 执行任务
         ExecutorService executorService = Executors.newFixedThreadPool(1);
         TaskEngine engine = TaskEngine.getInstance(executorService);
 
@@ -59,19 +59,11 @@ class TestTaskTimeout {
 
         // 验证结果
         Map<String, Result<?>> results = context.getTaskResultMap();
-        Result<?> result = results.get("timeOutTask");
+        Result<?> result = results.get("retryTask");
 
-        // 验证结果 
-        assertNull(result);
-
-    }
-
-    @Test
-    void shouldHandleCircularDependencies() {
-    }
-
-    @Test
-    void shouldHandleConcurrentTaskExecution() {
+        // 验证结果
+        assertNotNull(result);
+        assertEquals("success-after-retry", result.getData());
     }
 
 }
