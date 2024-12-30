@@ -1,165 +1,193 @@
 # Getting Started with Haidu-Async
 
+## Overview
+
+Haidu-Async is designed for complex task orchestration scenarios such as:
+
+- Data processing pipelines
+- Distributed job workflows
+- Service orchestration
+- ETL processes
+
 ## Prerequisites
 
 - JDK 17 or higher
 - Maven 3.6 or higher
+- Basic understanding of CompletableFuture
 
-## Installation
+## Core Concepts
 
-Add the following dependency to your pom.xml:
+### Task
 
-```xml
-<dependency>
-    <groupId>com.oneinstep</groupId>
-    <artifactId>haidu-async</artifactId>
-    <version>1.0.0</version>
-</dependency>
-```
-
-## Basic Usage
-
-### 1. Define Task Classes
-
-Create your task classes by extending AbstractTask:
-
+A task is the basic execution unit, defined by extending `AbstractTask<T>`:
 ```java
-public class Task1 extends AbstractTask<String> {
+@Slf4j
+public class DataProcessTask extends AbstractTask<ProcessResult> {
     @Override
-    protected Result<String> invoke(RequestContext context) {
-        // Your task logic here
-        return Result.success("Task1 Result");
+    protected Result<ProcessResult> invoke(RequestContext context) {
+        // Get parameters from context
+        Map<String, Object> params = getParams();
+        String inputData = (String) params.get("inputData");
+        
+        // Process data
+        ProcessResult result = processData(inputData);
+        
+        return Result.success(result);
     }
-
+    
     @Override
     protected void beforeInvoke(RequestContext context) {
-        // Pre-processing logic
+        log.info("Starting data processing task: {}", getTaskId());
     }
-
+    
     @Override
     protected void afterInvoke(RequestContext context) {
-        // Post-processing logic
+        log.info("Completed data processing task: {}", getTaskId());
     }
-
+    
     @Override
     protected Logger getLogger() {
-        return LoggerFactory.getLogger(Task1.class);
+        return log;
     }
 }
 ```
 
-### 2. Configure Task Dependencies
+### Task Flow
 
-Create a JSON or YAML configuration file:
-
+Tasks are organized into flows using JSON/YAML configuration:
 ```json
 {
-  "arrangeName": "demo-task",
-  "description": "Demo task arrangement",
+  "arrangeName": "data-pipeline",
+  "description": "Data processing pipeline",
   "arrangeRule": [
-    [
-      "task1,task2:task3"
-    ],
-    [
-      "task4,task5",
-      "task4:task6"
-    ],
-    [
-      "task7"
-    ]
-  ],
-  "taskDetailsMap": {
-    "task1": {
-      "taskId": "task1",
-      "fullClassName": "com.example.Task1",
-      "retries": 3,
-      "timeout": 1000,
-      "taskParams": [
-        {
-          "name": "param1",
-          "type": "STRING",
-          "value": "value1",
-          "required": true
-        }
-      ]
-    }
-    // ... other task definitions
-  }
+    ["fetchData,validateData:transformData"],  // Parallel fetch and validate, then transform
+    ["processData,enrichData"],                // Parallel process and enrich
+    ["saveData"]                               // Finally save
+  ]
 }
 ```
-
-### 3. Execute Tasks
-
-```java
-// Create executor service
-ExecutorService executorService = Executors.newFixedThreadPool(10);
-
-try {
-    // Load task configuration
-    TaskConfigFactory factory = new TaskConfigFactory(new JsonTaskDefinitionReader());
-    TaskConfig taskConfig = factory.createConfig(new FileReader("config.json"));
-    
-    // Create request context
-    RequestContext context = new RequestContext();
-    context.setTaskConfig(taskConfig);
-    
-    // Execute tasks
-    TaskEngine engine = TaskEngine.getInstance(executorService);
-    engine.startEngine(context);
-    
-    // Get results
-    Map<String, Result<?>> results = context.getTaskResultMap();
-} finally {
-    executorService.shutdown();
-}
-```
-
-## Advanced Features
 
 ### Task Parameters
 
-Haidu-Async supports various parameter types:
-
-- STRING
-- INT
-- LONG
-- DOUBLE
-- BOOLEAN
-- LIST
-- MAP
-- JSON
-- JSON_ARRAY
-- CONTEXT
-
-### Retry Mechanism
-
-Configure retry attempts in task details:
+Parameters can be passed to tasks in various formats:
 
 ```json
 {
-  "retries": 3,
-  "timeout": 1000
+  "taskParams": [
+    {
+      "name": "inputPath",
+      "type": "STRING",
+      "value": "/data/input.csv",
+      "required": true
+    },
+    {
+      "name": "config",
+      "type": "JSON",
+      "value": "{\"batch\":100,\"timeout\":5000}",
+      "required": true
+    },
+    {
+      "name": "userId",
+      "type": "CONTEXT",
+      "value": "#(current_user)#",
+      "required": true
+    }
+  ]
 }
 ```
 
-### Timeout Control
+## Common Use Cases
 
-Set timeout duration in milliseconds:
+### 1. Sequential Tasks
 
 ```json
 {
-  "timeout": 5000
+  "arrangeRule": [
+    ["step1"],
+    ["step2"],
+    ["step3"]
+  ]
+}
+```
+
+### 2. Parallel Tasks
+```json
+{
+  "arrangeRule": [
+    ["taskA,taskB,taskC"]
+  ]
+}
+```
+
+### 3. Complex Dependencies
+```json
+{
+  "arrangeRule": [
+    ["prepare"],
+    ["taskA,taskB:taskC", "taskD:taskE"],
+    ["finalize"]
+  ]
+}
+```
+
+## Error Handling
+
+### Retry Mechanism
+
+```java
+public class RetryableTask extends AbstractTask<String> {
+    @Override
+    protected void beforeInvoke(RequestContext context) {
+        setRetryTimes(3);  // Set retry attempts
+        setTimeout(5000L); // Set timeout in milliseconds
+    }
+    
+    @Override
+    protected void onError(RequestContext context, Throwable e) {
+        log.error("Task failed: {}", e.getMessage());
+        // Custom error handling
+    }
+}
+```
+
+### Timeout Handling
+
+```java
+@Override
+protected void onTimeout(RequestContext context) {
+    log.warn("Task {} timed out", getTaskId());
+    // Cleanup resources
 }
 ```
 
 ## Best Practices
 
-1. Always set appropriate timeout values
-2. Use meaningful task IDs
-3. Implement proper error handling
-4. Configure reasonable retry counts
-5. Monitor task execution status
+1. Task Design
+    - Keep tasks focused and single-purpose
+    - Make tasks idempotent when possible
+    - Use appropriate parameter types
+    - Handle errors gracefully
 
-## Troubleshooting
+2. Configuration
+    - Use meaningful task IDs
+    - Group related tasks together
+    - Set reasonable timeouts
+    - Document task dependencies
 
-Common issues and solutions... 
+3. Performance
+    - Configure thread pool size appropriately
+    - Monitor task execution times
+    - Use context parameters for shared data
+    - Clean up resources in afterInvoke
+
+4. Testing
+    - Test tasks in isolation
+    - Verify task dependencies
+    - Test error scenarios
+    - Test timeout handling
+
+## Next Steps
+
+- Read the [Configuration Guide](configuration.md) for detailed configuration options
+- Check the [API Reference](api_reference.md) for complete API documentation
+- Review example code in the repository 

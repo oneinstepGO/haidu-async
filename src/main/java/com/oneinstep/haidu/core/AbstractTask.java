@@ -5,6 +5,7 @@ import com.oneinstep.haidu.context.RequestContext;
 import com.oneinstep.haidu.result.Result;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 
 import java.util.HashMap;
@@ -15,6 +16,7 @@ import java.util.function.Consumer;
 /**
  * 抽象任务类，定义任务的基本属性和方法
  */
+@Slf4j
 public abstract class AbstractTask<T> implements Consumer<RequestContext> {
 
     // 任务ID
@@ -55,7 +57,9 @@ public abstract class AbstractTask<T> implements Consumer<RequestContext> {
      *
      * @return 日志记录器
      */
-    protected abstract Logger getLogger();
+    protected Logger getLogger() {
+        return log;
+    }
 
     /**
      * 检查任务执行结果

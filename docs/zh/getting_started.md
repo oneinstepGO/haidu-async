@@ -1,158 +1,247 @@
 # Haidu-Async 入门指南
 
-## 前置条件
+## 概述
+
+Haidu-Async 专为以下复杂任务编排场景设计：
+
+- 数据处理管道
+- 分布式作业流程
+- 服务编排
+- ETL 流程
+
+## 环境要求
 
 - JDK 17 或更高版本
 - Maven 3.6 或更高版本
+- 了解 CompletableFuture 基本概念
 
-## 安装
+## 核心概念
 
-在 pom.xml 中添加以下依赖：
+### 任务定义
 
-```xml
-<dependency>
-    <groupId>com.oneinstep</groupId>
-    <artifactId>haidu-async</artifactId>
-    <version>1.0.0</version>
-</dependency>
-```
-
-## 基本用法
-
-### 1. 定义任务类
-
-通过继承 AbstractTask 创建你的任务类：
-
+任务是基本执行单元，通过继承 `AbstractTask<T>` 实现：
 ```java
-public class Task1 extends AbstractTask<String> {
+@Slf4j
+public class DataProcessTask extends AbstractTask<ProcessResult> {
     @Override
-    protected Result<String> invoke(RequestContext context) {
-        // 你的任务逻辑
-        return Result.success("Task1 结果");
+    protected Result<ProcessResult> invoke(RequestContext context) {
+        // 从上下文获取参数
+        Map<String, Object> params = getParams();
+        String inputData = (String) params.get("inputData");
+        
+        // 处理数据
+        ProcessResult result = processData(inputData);
+        
+        return Result.success(result);
     }
-
+    
     @Override
     protected void beforeInvoke(RequestContext context) {
-        // 前置处理逻辑
+        log.info("开始数据处理任务: {}", getTaskId());
     }
-
+    
     @Override
     protected void afterInvoke(RequestContext context) {
-        // 后置处理逻辑
+        log.info("完成数据处理任务: {}", getTaskId());
     }
-
+    
     @Override
     protected Logger getLogger() {
-        return LoggerFactory.getLogger(Task1.class);
+        return log;
     }
 }
 ```
 
-### 2. 配置任务依赖
+### 任务流配置
 
-创建 JSON 或 YAML 配置文件：
-
+使用 JSON/YAML 配置任务流：
 ```json
 {
-  "arrangeName": "demo-task",
-  "description": "示例任务编排",
+  "arrangeName": "数据管道",
+  "description": "数据处理流水线",
   "arrangeRule": [
-    ["task1,task2:task3"],
-    ["task4,task5", "task4:task6"],
-    ["task7"]
-  ],
-  "taskDetailsMap": {
-    "task1": {
-      "taskId": "task1",
-      "fullClassName": "com.example.Task1",
-      "retries": 3,
-      "timeout": 1000,
-      "taskParams": [
-        {
-          "name": "param1",
-          "type": "STRING",
-          "value": "value1",
-          "required": true
-        }
-      ]
-    }
-    // ... 其他任务定义
-  }
+    ["获取数据,验证数据:转换数据"],  // 并行获取和验证，然后转换
+    ["处理数据,数据增强"],          // 并行处理和增强
+    ["保存数据"]                   // 最后保存
+  ]
 }
 ```
-
-### 3. 执行任务
-
-```java
-// 创建线程池
-ExecutorService executorService = Executors.newFixedThreadPool(10);
-
-try {
-    // 加载任务配置
-    TaskConfigFactory factory = new TaskConfigFactory(new JsonTaskDefinitionReader());
-    TaskConfig taskConfig = factory.createConfig(new FileReader("config.json"));
-    
-    // 创建请求上下文
-    RequestContext context = new RequestContext();
-    context.setTaskConfig(taskConfig);
-    
-    // 执行任务
-    TaskEngine engine = TaskEngine.getInstance(executorService);
-    engine.startEngine(context);
-    
-    // 获取结果
-    Map<String, Result<?>> results = context.getTaskResultMap();
-} finally {
-    executorService.shutdown();
-}
-```
-
-## 高级特性
 
 ### 任务参数
 
-Haidu-Async 支持多种参数类型：
-
-- STRING（字符串）
-- INT（整数）
-- LONG（长整数）
-- DOUBLE（双精度浮点数）
-- BOOLEAN（布尔值）
-- LIST（列表）
-- MAP（映射）
-- JSON（JSON对象）
-- JSON_ARRAY（JSON数组）
-- CONTEXT（上下文参数）
-
-### 重试机制
-
-在任务详情中配置重试次数：
+支持多种格式的参数传递：
 
 ```json
 {
-  "retries": 3,
-  "timeout": 1000
+  "taskParams": [
+    {
+      "name": "inputPath",
+      "type": "STRING",
+      "value": "/data/input.csv",
+      "required": true
+    },
+    {
+      "name": "config",
+      "type": "JSON",
+      "value": "{\"batch\":100,\"timeout\":5000}",
+      "required": true
+    },
+    {
+      "name": "userId",
+      "type": "CONTEXT",
+      "value": "#(current_user)#",
+      "required": true
+    }
+  ]
 }
 ```
 
-### 超时控制
+## 常见使用场景
 
-设置超时时间（毫秒）：
+### 1. 顺序执行
 
 ```json
 {
-  "timeout": 5000
+  "arrangeRule": [
+    ["步骤1"],
+    ["步骤2"],
+    ["步骤3"]
+  ]
+}
+```
+
+### 2. 并行执行
+
+```json
+{
+  "arrangeRule": [
+    ["任务A,任务B,任务C"]
+  ]
+}
+```
+
+### 3. 复杂依赖
+
+```json
+{
+  "arrangeRule": [
+    ["准备"],
+    ["任务A,任务B:任务C", "任务D:任务E"],
+    ["完成"]
+  ]
+}
+```
+
+## 错误处理
+
+### 重试机制
+```java
+public class RetryableTask extends AbstractTask<String> {
+    @Override
+    protected void beforeInvoke(RequestContext context) {
+        setRetryTimes(3);  // 设置重试次数
+        setTimeout(5000L); // 设置超时时间（毫秒）
+    }
+    
+    @Override
+    protected void onError(RequestContext context, Throwable e) {
+        log.error("任务执行失败: {}", e.getMessage());
+        // 自定义错误处理
+    }
+}
+```
+
+### 超时处理
+
+```java
+@Override
+protected void onTimeout(RequestContext context) {
+    log.warn("任务 {} 超时", getTaskId());
+    // 清理资源
 }
 ```
 
 ## 最佳实践
 
-1. 始终设置合适的超时时间
-2. 使用有意义的任务ID
-3. 实现适当的错误处理
-4. 配置合理的重试次数
-5. 监控任务执行状态
+1. 任务设计
+    - 保持任务功能单一
+    - 尽可能使任务具有幂等性
+    - 选择合适的参数类型
+    - 优雅处理错误
 
-## 常见问题
+2. 配置管理
+    - 使用有意义的任务ID
+    - 相关任务分组
+    - 设置合理的超时时间
+    - 文档化任务依赖关系
 
-常见问题及解决方案... 
+3. 性能优化
+    - 合理配置线程池大小
+    - 监控任务执行时间
+    - 使用上下文参数共享数据
+    - 在 afterInvoke 中清理资源
+
+4. 测试策略
+    - 独立测试任务
+    - 验证任务依赖关系
+    - 测试错误场景
+    - 测试超时处理
+
+## 实际应用示例
+
+### 数据处理流水线
+
+```java
+@Slf4j
+public class DataPipeline {
+    public static void main(String[] args) {
+        ExecutorService executor = Executors.newFixedThreadPool(10);
+        try {
+            // 加载配置
+            TaskConfigFactory factory = new TaskConfigFactory(new JsonTaskDefinitionReader());
+            TaskConfig config = factory.createConfig(new FileReader("data-pipeline.json"));
+            
+            // 设置上下文
+            RequestContext context = new RequestContext();
+            context.setTaskConfig(config);
+            context.getRequestParam().put("batch_size", 1000);
+            
+            // 执行任务流
+            TaskEngine engine = TaskEngine.getInstance(executor);
+            engine.startEngine(context);
+            
+            // 处理结果
+            Map<String, Result<?>> results = context.getTaskResultMap();
+            processResults(results);
+            
+        } catch (Exception e) {
+            log.error("数据处理失败", e);
+        } finally {
+            executor.shutdown();
+        }
+    }
+}
+```
+
+## 常见问题解决
+
+1. 任务超时
+    - 检查任务执行时间
+    - 调整超时设置
+    - 优化任务逻辑
+
+2. 内存溢出
+    - 控制并发任务数量
+    - 及时释放资源
+    - 使用流式处理
+
+3. 死锁问题
+    - 检查任务依赖关系
+    - 避免循环依赖
+    - 设置合理的超时时间
+
+## 下一步
+
+- 阅读[配置指南](configuration.md)了解详细配置选项
+- 查看[API 参考](api_reference.md)获取完整 API 文档
+- 参考示例代码深入学习 
