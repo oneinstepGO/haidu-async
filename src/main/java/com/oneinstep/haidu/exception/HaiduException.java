@@ -9,8 +9,12 @@ public class HaiduException extends RuntimeException {
         super(message);
     }
 
-    public HaiduException(Exception cause) {
+    public HaiduException(Throwable cause) {
         super(cause);
+    }
+
+    public HaiduException(String message, Throwable t) {
+        super(message, t);
     }
 
 }

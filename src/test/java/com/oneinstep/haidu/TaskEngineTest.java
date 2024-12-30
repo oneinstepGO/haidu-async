@@ -7,10 +7,7 @@ import com.oneinstep.haidu.exception.IllegalTaskConfigException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -62,8 +59,8 @@ class TaskEngineTest {
 
         Map<String, Object> params = taskEngine.handleTaskParams(taskParams, context);
 
-        String[] expected = {"a", "b", "c"};
-        assertArrayEquals(expected, (Object[]) params.get("param1"));
+        List<String> expected = Arrays.asList("a", "b", "c");
+        assertEquals(expected, params.get("param1"));
     }
 
     @Test

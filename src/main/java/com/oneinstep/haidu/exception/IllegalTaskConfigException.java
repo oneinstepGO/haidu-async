@@ -9,4 +9,8 @@ public class IllegalTaskConfigException extends HaiduException {
         super(message);
     }
 
+    public IllegalTaskConfigException(String message, Throwable t) {
+        super(message, t);
+    }
+
 }

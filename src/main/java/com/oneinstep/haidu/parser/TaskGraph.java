@@ -4,9 +4,10 @@ import com.oneinstep.haidu.core.AbstractTask;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -28,7 +29,7 @@ public class TaskGraph {
      * @param task   任务实例
      */
     public void addTask(String taskId, AbstractTask<?> task) {
-        // 如果任务ID不存在，则添加新的任务节点
+        // 添加任务节点时不要求与其他节点有连接
         taskMap.putIfAbsent(taskId, new TaskNode(taskId, task));
     }
 
@@ -39,11 +40,13 @@ public class TaskGraph {
      * @param dependencyId 依赖任务ID
      */
     public void addDependency(String taskId, String dependencyId) {
-        // 获取任务节点和依赖任务节点
+        // 添加依赖关系是可选的
         TaskNode task = taskMap.get(taskId);
         TaskNode dependency = taskMap.get(dependencyId);
-        // 如果任务节点和依赖任务节点都存在，则将依赖任务添加到任务的依赖列表中
         if (task != null && dependency != null) {
+            if (task.equals(dependency)) {
+                throw new IllegalArgumentException("Task cannot depend on itself: " + taskId);
+            }
             task.dependencies.add(dependency);
         }
     }
@@ -95,7 +98,7 @@ public class TaskGraph {
         AbstractTask<?> task;
 
         // 依赖任务列表
-        List<TaskNode> dependencies = new ArrayList<>();
+        Set<TaskNode> dependencies = new HashSet<>();
 
         /**
          * 构造函数，初始化任务节点

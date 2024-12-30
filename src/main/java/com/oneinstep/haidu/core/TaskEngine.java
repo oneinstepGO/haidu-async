@@ -12,10 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.*;
 
 /**
@@ -152,7 +149,7 @@ public class TaskEngine {
             Boolean required = taskParam.getRequired();
             if (Boolean.TRUE.equals(required)) {
                 // 从 Context 中获取的参数在任务执行时处理
-                if (StringUtils.isEmpty(value) && type != TaskParam.Type.CONTEXT) {
+                if (StringUtils.isEmpty(value)) {
                     log.error("task param is required, but value is empty, taskParam:{}", taskParam);
                     throw new IllegalTaskConfigException(
                             "task param is required, but value is empty, taskParam:" + taskParam);
@@ -165,15 +162,17 @@ public class TaskEngine {
             try {
                 value = value.trim();
                 setParamValues(taskParam, type, params, value);
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 log.error("handle task params error, taskParam:{}", taskParam, e);
+                throw new IllegalTaskConfigException("Invalid Task Params！", e);
             }
 
         }
         return params;
     }
 
-    private static void setParamValues(TaskParam taskParam, TaskParam.Type type, Map<String, Object> params, String value) {
+    private static void setParamValues(TaskParam taskParam, TaskParam.Type type, Map<String, Object> params,
+                                       String value) {
         switch (type) {
             case STRING:
                 params.put(taskParam.getName(), value);
@@ -191,7 +190,8 @@ public class TaskEngine {
                 params.put(taskParam.getName(), Boolean.parseBoolean(value));
                 break;
             case LIST:
-                params.put(taskParam.getName(), value.split(","));
+                // 将字符串转换为数组
+                params.put(taskParam.getName(), Arrays.asList(value.split(",")));
                 break;
             case MAP:
                 String[] split = value.split(",");
@@ -205,11 +205,15 @@ public class TaskEngine {
             case JSON:
                 if (JSON.isValid(value)) {
                     params.put(taskParam.getName(), JSON.parse(value));
+                } else {
+                    throw new IllegalTaskConfigException("invalid json task param: " + value);
                 }
                 break;
             case JSON_ARRAY:
                 if (JSON.isValidArray(value)) {
                     params.put(taskParam.getName(), JSON.parseArray(value));
+                } else {
+                    throw new IllegalTaskConfigException("invalid json array task param: " + value);
                 }
                 break;
             case CONTEXT:
@@ -222,6 +226,7 @@ public class TaskEngine {
                             "CONTEXT task param value must be start with '\"#(' and end with ')#\"', taskParam:"
                                     + taskParam);
                 }
+                // 在任务开始执行前，从 Context 中获取，因为现在可能还没有值
                 params.put(taskParam.getName(), value);
                 break;
             default:
